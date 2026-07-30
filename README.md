@@ -9,7 +9,7 @@ Quotes for the Cactus Shop, in two flavours the site owner picks between:
   request page instead of the checkout, `/shop/checkout` refuses to serve, and
   prices can be withheld entirely so the shop prices each enquiry by hand.
 
-Table prefix `qfs_`. Public routes mount at `/quote`. Requires `shop` 0.1.144 or
+Table prefix `qfs_`. Public routes mount at `/quote`. Requires `shop` 0.1.147 or
 newer, for the two extension points below.
 
 ## What the shopper sees
