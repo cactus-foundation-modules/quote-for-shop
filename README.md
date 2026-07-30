@@ -10,7 +10,7 @@ Quotes for the Cactus Shop, in two flavours the site owner picks between:
   prices can be withheld entirely so the shop prices each enquiry by hand.
 
 Table prefix `qfs_`. Public routes mount at `/quote`. Requires `shop` 0.1.147 or
-newer (the two extension points below) and Cactus core 0.5.795 or newer (the
+newer (the two extension points below) and Cactus core 0.5.800 or newer (the
 release carrying the two browser packages the PDF is printed with).
 
 ## What the shopper sees
