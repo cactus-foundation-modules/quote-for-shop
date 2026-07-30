@@ -1,0 +1,178 @@
+{
+  "name": "quote-for-shop",
+  "version": "0.1.0",
+  "tablePrefix": "qfs_",
+  "description": "Quotes for the Shop: either turn the whole shop into a quote request flow (Add to quote, no checkout, prices optionally withheld), or leave ordinary checkout alone and let shoppers save a cart as a quote, retrieve it later with a short code, and download it as a PDF of a layout you design yourself.",
+  "requiresCoreVersion": "0.5.786",
+  "publicBasePath": "quote",
+  "requiresModules": [
+    {
+      "name": "shop",
+      "minVersion": "0.1.144"
+    }
+  ],
+  "requiredEnvVars": [],
+  "permissions": [
+    "quotes.access",
+    "quotes.manage"
+  ],
+  "navGroupLabel": "Shop",
+  "navEntries": [
+    {
+      "label": "Quotes",
+      "path": "/m/quote-for-shop/quotes",
+      "icon": "<path d=\"M8 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-2\"/><rect x=\"8\" y=\"2\" width=\"8\" height=\"4\" rx=\"1\"/><path d=\"M8 11h8M8 15h5\"/>",
+      "permission": "quotes.access"
+    }
+  ],
+  "cookieCategories": [],
+  "settingsTabs": [
+    {
+      "id": "quotes",
+      "label": "Quotes",
+      "permission": "quotes.manage",
+      "host": "shop.settings-sub-tabs",
+      "import": "./components/admin/QuoteSettingsPanel",
+      "component": "QuoteSettingsPanel"
+    }
+  ],
+  "extensionPoints": [
+    {
+      "point": "shop.commerce-mode",
+      "id": "quote-mode",
+      "import": "./lib/commerce-mode",
+      "component": "quoteCommerceModeProvider"
+    },
+    {
+      "point": "shop.cart-header-actions",
+      "id": "retrieve-quote",
+      "import": "./components/public/RetrieveQuoteHeaderAction",
+      "component": "RetrieveQuoteHeaderAction"
+    },
+    {
+      "point": "shop.cart-header-actions",
+      "id": "save-cart-quote",
+      "import": "./components/public/SaveCartHeaderAction",
+      "component": "SaveCartHeaderAction"
+    }
+  ],
+  "puckBlocks": [
+    {
+      "type": "QuoteSaveCartButton",
+      "import": "./components/puck/QuoteSaveCartButton",
+      "component": "quoteSaveCartButtonPuckComponent",
+      "rscComponent": "quoteSaveCartButtonPuckRscComponent",
+      "layoutTypes": [
+        "shopCart"
+      ],
+      "rscImport": "./components/puck/QuoteSaveCartButton.rsc"
+    },
+    {
+      "type": "QuoteRetrieveButton",
+      "import": "./components/puck/QuoteRetrieveButton",
+      "component": "quoteRetrieveButtonPuckComponent",
+      "rscComponent": "quoteRetrieveButtonPuckRscComponent",
+      "layoutTypes": [
+        "shopCart"
+      ],
+      "rscImport": "./components/puck/QuoteRetrieveButton.rsc"
+    },
+    {
+      "type": "QuoteRequestForm",
+      "import": "./components/puck/QuoteRequestForm",
+      "component": "quoteRequestFormPuckComponent",
+      "rscComponent": "quoteRequestFormPuckRscComponent",
+      "layoutTypes": [
+        "quoteRequest"
+      ],
+      "rscImport": "./components/puck/QuoteRequestForm.rsc"
+    },
+    {
+      "type": "QuoteRequestItems",
+      "import": "./components/puck/QuoteRequestItems",
+      "component": "quoteRequestItemsPuckComponent",
+      "rscComponent": "quoteRequestItemsPuckRscComponent",
+      "layoutTypes": [
+        "quoteRequest"
+      ],
+      "rscImport": "./components/puck/QuoteRequestItems.rsc"
+    },
+    {
+      "type": "QuoteDocHeader",
+      "import": "./components/puck/doc-parts",
+      "component": "quoteDocHeaderPuckComponent",
+      "rscComponent": "quoteDocHeaderPuckRscComponent",
+      "layoutTypes": [
+        "quoteDocument"
+      ]
+    },
+    {
+      "type": "QuoteDocCustomer",
+      "import": "./components/puck/doc-parts",
+      "component": "quoteDocCustomerPuckComponent",
+      "rscComponent": "quoteDocCustomerPuckRscComponent",
+      "layoutTypes": [
+        "quoteDocument"
+      ]
+    },
+    {
+      "type": "QuoteDocLines",
+      "import": "./components/puck/doc-parts",
+      "component": "quoteDocLinesPuckComponent",
+      "rscComponent": "quoteDocLinesPuckRscComponent",
+      "layoutTypes": [
+        "quoteDocument"
+      ]
+    },
+    {
+      "type": "QuoteDocTotals",
+      "import": "./components/puck/doc-parts",
+      "component": "quoteDocTotalsPuckComponent",
+      "rscComponent": "quoteDocTotalsPuckRscComponent",
+      "layoutTypes": [
+        "quoteDocument"
+      ]
+    },
+    {
+      "type": "QuoteDocNotes",
+      "import": "./components/puck/doc-parts",
+      "component": "quoteDocNotesPuckComponent",
+      "rscComponent": "quoteDocNotesPuckRscComponent",
+      "layoutTypes": [
+        "quoteDocument"
+      ]
+    }
+  ],
+  "layoutTypes": {
+    "groupLabel": "Quotes",
+    "types": [
+      {
+        "key": "quoteDocument",
+        "label": "Quote document",
+        "starterImport": "./lib/starterLayouts",
+        "starterExport": "quoteDocumentStarters"
+      },
+      {
+        "key": "quoteRequest",
+        "label": "Quote request page",
+        "starterImport": "./lib/starterLayouts",
+        "starterExport": "quoteRequestStarters"
+      }
+    ]
+  },
+  "cronJobs": [
+    {
+      "path": "/api/m/quote-for-shop/cron/expire-quotes",
+      "schedule": "0 4 * * *"
+    }
+  ],
+  "memberExtensions": {
+    "activityTypes": [],
+    "notificationCategories": [],
+    "routeTiers": []
+  },
+  "teardown": [
+    "qfs_quotes",
+    "qfs_settings"
+  ]
+}
