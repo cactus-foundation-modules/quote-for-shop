@@ -17,7 +17,7 @@ release carrying the two browser packages the PDF is printed with).
 
 | Where | What |
 | --- | --- |
-| Basket page | "Save cart as a quote" (a block, or the default one) and "Retrieve quote" (beside the "Your cart" heading, or placed as a block) |
+| Basket page | "Retrieve quote" and "Save cart as a quote" on the heading row by default, both switchable. Three blocks for placing them yourself: **Quote: Save cart button**, **Quote: Save cart (under checkout)** - the same control with a line of copy above it, sized to sit beneath the checkout button, which is where a shopper reading a long basket actually decides - and **Quote: Retrieve quote button** |
 | The lightbox | The saved quote, rendered from the layout the owner designed, with a sticky "Download as PDF" button under it |
 | `/quote` | The quote request page - what stands in for the checkout in quotes-only mode |
 | `/quote/<code>` | Their own copy of a quote, with the PDF button |
