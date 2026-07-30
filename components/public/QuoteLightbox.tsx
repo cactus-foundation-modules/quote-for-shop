@@ -6,7 +6,7 @@ import { QUOTE_UI_CSS } from '@/modules/quote-for-shop/components/public/quote-u
 
 // The lightbox both storefront controls open. Chrome only: a title bar, a body,
 // and a sticky footer the caller fills. What goes inside is the caller's business
-// - the saved-quote preview puts the server-rendered document in an iframe there,
+// - the saved-quote preview puts the server-rendered document fragment there,
 // the retrieve panel puts a form.
 //
 // Portalled to <body> for the reason the shop's own basket drawer is: a cart block

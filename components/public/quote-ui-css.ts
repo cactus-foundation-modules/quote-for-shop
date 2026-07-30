@@ -26,10 +26,14 @@ export const QUOTE_UI_CSS = `
 .qfs-lb-title { margin: 0; font-size: 1rem; font-weight: 600; }
 .qfs-lb-close { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-bg-subtle); color: var(--color-text); cursor: pointer; }
 .qfs-lb-body { flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; }
-/* The document is rendered by the server and shown in an iframe, so the layout
-   the owner designed - and its own CSS - lands here exactly as it does on the
-   quote's own page, and exactly as it will in the PDF. */
-.qfs-lb-frame { flex: 1 1 auto; width: 100%; border: 0; background: var(--color-bg); }
+/* The document is rendered by the server on its own page and its .qfs-view
+   fragment is fetched and injected here (an iframe cannot be used: core sends
+   X-Frame-Options: DENY and frame-ancestors 'none' on every page). The fragment's
+   sizing rules live on that page, outside the fragment, so they are restated for
+   the lightbox copy. */
+.qfs-lb-doc { flex: 1 1 auto; min-height: 0; overflow: auto; background: var(--color-bg); }
+.qfs-lb-doc .qfs-view { max-width: 820px; margin: 0 auto; padding: 1.5rem 1.25rem 2.5rem; }
+.qfs-lb-doc > .qfs-note { padding: 1.125rem; }
 .qfs-lb-foot { position: sticky; bottom: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; padding: 0.875rem 1.125rem; border-top: 1px solid var(--color-border); background: var(--color-bg); }
 .qfs-lb-code { display: flex; align-items: center; gap: 0.5rem; margin-right: auto; font-size: 0.9375rem; }
 .qfs-lb-code b { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1.0625rem; letter-spacing: 0.06em; }

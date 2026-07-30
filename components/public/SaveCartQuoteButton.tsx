@@ -8,11 +8,18 @@ import { QuoteLightbox } from '@/modules/quote-for-shop/components/public/QuoteL
 // "Save cart as a quote": the button, the little form that asks for an email (or
 // does not), and the preview that opens once the quote exists.
 //
-// The preview is the saved quote's own page in an iframe, not a re-implementation
-// of it - so what the shopper sees here is exactly what the site owner designed in
-// Appearance > Layouts > Quotes > Quote document, and exactly what comes out of
-// the PDF button under it. Anything else would be a third rendering of the same
-// document, drifting from the other two.
+// The preview is the saved quote's own server-rendered document, not a
+// re-implementation of it - so what the shopper sees here is exactly what the site
+// owner designed in Appearance > Layouts > Quotes > Quote document, and exactly
+// what comes out of the PDF button under it. Anything else would be a third
+// rendering of the same document, drifting from the other two.
+//
+// It cannot be an iframe: core sends X-Frame-Options: DENY and a
+// frame-ancestors 'none' CSP on every page, quote pages included, so a framed
+// /quote/<code>/view renders as a blank panel. Instead the page is fetched from
+// this (same) origin and its .qfs-view fragment injected. innerHTML never runs
+// the fragment's scripts, which is fine - the document is static content - and
+// any <style> the layout's blocks carry inside the fragment travels with it.
 //
 // Prices, quantities and options are all worked out by the server from the cart
 // the browser sends: this component never computes a figure.
@@ -54,6 +61,8 @@ export function SaveCartQuoteButton({
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState<SavedQuote | null>(null)
   const [copied, setCopied] = useState(false)
+  const [docHtml, setDocHtml] = useState<string | null>(null)
+  const [docFailed, setDocFailed] = useState(false)
 
   // The button is pointless on an empty cart, so it hides itself rather than
   // offering to save nothing.
@@ -78,6 +87,8 @@ export function SaveCartQuoteButton({
         setError(typeof data?.error === 'string' ? data.error : 'That did not save. Please try again.')
         return
       }
+      setDocHtml(null)
+      setDocFailed(false)
       setSaved(data as SavedQuote)
       setStage('saved')
     } catch {
@@ -86,6 +97,27 @@ export function SaveCartQuoteButton({
       setBusy(false)
     }
   }
+
+  // Fetch the saved quote's bare document and lift out its .qfs-view fragment
+  // for the preview panel (see the header comment for why this is not an iframe).
+  useEffect(() => {
+    if (stage !== 'saved' || !saved) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const response = await fetch(saved.viewUrl, { credentials: 'same-origin' })
+        if (!response.ok) throw new Error(String(response.status))
+        const markup = new DOMParser()
+          .parseFromString(await response.text(), 'text/html')
+          .querySelector('.qfs-view')?.outerHTML
+        if (!markup) throw new Error('document fragment missing from page')
+        if (!cancelled) setDocHtml(markup)
+      } catch {
+        if (!cancelled) setDocFailed(true)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [stage, saved])
 
   if (!preview && itemCount === 0) return null
 
@@ -183,15 +215,20 @@ export function SaveCartQuoteButton({
             </>
           }
         >
-          <iframe
-            className="qfs-lb-frame"
-            src={saved.viewUrl}
-            title={`Quote ${saved.quoteNumber}`}
-            // The document is our own page from our own origin, and it contains no
-            // forms and nothing to submit - so it needs no more privilege than
-            // being allowed to run its own scripts.
-            sandbox="allow-same-origin allow-scripts allow-popups"
-          />
+          <div className="qfs-lb-doc">
+            {docHtml ? (
+              // Our own page, from our own origin, fetched over the same session -
+              // not third-party markup.
+              <div dangerouslySetInnerHTML={{ __html: docHtml }} />
+            ) : docFailed ? (
+              <p className="qfs-note">
+                The preview would not load, but the quote itself is safe -{' '}
+                <a href={saved.url}>open it on its own page</a>.
+              </p>
+            ) : (
+              <p className="qfs-note">Loading your quote…</p>
+            )}
+          </div>
         </QuoteLightbox>
       )}
 
