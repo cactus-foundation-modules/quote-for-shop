@@ -63,7 +63,9 @@ export function RetrieveQuoteButton({
       // Replace, in that order: an add that lands before the clear would be wiped
       // out by it, and a shopper would watch their restored basket vanish.
       clearCart()
-      for (const line of retrieved.lines) {
+      // Backwards on purpose: every add goes to the top of the cart, so walking the
+      // saved lines in reverse leaves the restored basket in the order it was saved.
+      for (const line of [...retrieved.lines].reverse()) {
         addToCart(line.productId, line.quantity, {
           lineId: line.lineId ?? undefined,
           meta: line.meta ?? undefined,

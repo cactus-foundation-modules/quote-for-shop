@@ -1,6 +1,6 @@
 {
   "name": "quote-for-shop",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "tablePrefix": "qfs_",
   "description": "Quotes for the Shop: either turn the whole shop into a quote request flow (Add to quote, no checkout, prices optionally withheld), or leave ordinary checkout alone and let shoppers save a cart as a quote, retrieve it later with a short code, and download it as a PDF of a layout you design yourself.",
   "requiresCoreVersion": "0.5.795",
@@ -8,7 +8,7 @@
   "requiresModules": [
     {
       "name": "shop",
-      "minVersion": "0.1.147"
+      "minVersion": "0.1.149"
     }
   ],
   "requiredEnvVars": [],
