@@ -34,9 +34,10 @@ export async function GET(request: NextRequest, context: { params: Promise<{ cod
   }
 
   try {
-    // The chrome-free document endpoint, not the shopper's page: no site header,
-    // no footer, and `print=1` so a block can drop anything screen-only.
-    const pdf = await renderQuotePdf(`/api/m/quote-for-shop/public/quotes/${code.replace('-', '')}/view?print=1`)
+    // The bare document view, not the shopper's own page: same designed layout,
+    // with the site chrome taken out and `print=1` so a block can drop anything
+    // that only makes sense on screen.
+    const pdf = await renderQuotePdf(`/quote/${code.replace('-', '')}/view?print=1`)
     return new NextResponse(pdf as unknown as BodyInit, {
       headers: {
         'Content-Type': 'application/pdf',
@@ -53,7 +54,11 @@ export async function GET(request: NextRequest, context: { params: Promise<{ cod
     // configuration fault rather than a bug - so it is reported in words the owner
     // can act on rather than swallowed into a 500 with no explanation.
     if (error instanceof QuotePdfUnavailableError) {
-      console.error('[quote-for-shop] PDF unavailable', error.message)
+      // The message says which of the three it was (packs missing, browser will not
+      // start, page would not load), and it goes to the deployment log where an
+      // owner or a developer can actually read it. The shopper gets the plain
+      // version, since none of it is their problem to fix.
+      console.error('[quote-for-shop] PDF unavailable:', error.message)
       return NextResponse.json({ error: 'This quote could not be turned into a PDF. The on-screen copy is still available.' }, { status: 503 })
     }
     console.error('[quote-for-shop] PDF failed', error)

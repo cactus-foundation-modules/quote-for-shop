@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     code: quote.code,
     quoteNumber: quote.quoteNumber,
     url: `/quote/${bareCode}`,
-    viewUrl: `/api/m/quote-for-shop/public/quotes/${bareCode}/view`,
+    viewUrl: `/quote/${bareCode}/view`,
     pdfUrl: config.pdfEnabled ? `/api/m/quote-for-shop/public/quotes/${bareCode}/pdf` : null,
     expiresAt: quote.expiresAt?.toISOString() ?? null,
     unavailable: snapshot.unavailable,

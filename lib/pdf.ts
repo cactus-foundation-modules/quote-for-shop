@@ -60,21 +60,43 @@ export async function renderQuotePdf(path: string): Promise<Uint8Array> {
   ])
   const chromium = chromiumModule?.default ?? null
 
-  const executablePath = chromium ? await chromium.executablePath() : await localChromePath()
+  // executablePath() unpacks the brotli-packed browser, so it throws when the packs
+  // are missing from the deployment - the file tracer cannot see them (they are read
+  // by fs against the package's own directory), which is why next.config.ts names
+  // them in outputFileTracingIncludes. Reported as an unavailable browser rather
+  // than a generic fault, because that is what it is and the fix is a build setting.
+  let executablePath: string | null = null
+  try {
+    executablePath = chromium ? await chromium.executablePath() : await localChromePath()
+  } catch (error) {
+    throw new QuotePdfUnavailableError(
+      `The packaged browser could not be unpacked: ${error instanceof Error ? error.message : String(error)}`,
+    )
+  }
   if (!executablePath) {
     throw new QuotePdfUnavailableError(
       'No browser is available to make a PDF. Install Google Chrome locally, or set CHROME_PATH.',
     )
   }
 
-  const browser = await puppeteer.launch({
-    executablePath,
-    args: chromium ? chromium.args : ['--no-sandbox', '--disable-dev-shm-usage'],
-    headless: true,
-    // Sized to a sheet of A4 at 96dpi, so a layout with a breakpoint in it prints
-    // its desktop shape rather than its phone one.
-    defaultViewport: { width: 794, height: 1123, deviceScaleFactor: 2 },
-  })
+  // A launch failure is the other half of the same story: the binary is there but
+  // will not run (a missing shared library, no memory left in the function). Same
+  // treatment - a plain refusal the owner can act on.
+  let browser
+  try {
+    browser = await puppeteer.launch({
+      executablePath,
+      args: chromium ? chromium.args : ['--no-sandbox', '--disable-dev-shm-usage'],
+      headless: true,
+      // Sized to a sheet of A4 at 96dpi, so a layout with a breakpoint in it
+      // prints its desktop shape rather than its phone one.
+      defaultViewport: { width: 794, height: 1123, deviceScaleFactor: 2 },
+    })
+  } catch (error) {
+    throw new QuotePdfUnavailableError(
+      `The browser would not start: ${error instanceof Error ? error.message : String(error)}`,
+    )
+  }
 
   try {
     const page = await browser.newPage()

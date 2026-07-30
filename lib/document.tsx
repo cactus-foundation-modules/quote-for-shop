@@ -84,67 +84,10 @@ export async function renderQuoteDocument(ctx: QuoteDocContext): Promise<ReactNo
   return <Render config={getModuleLayoutPuckRscConfig('quoteDocument') as any} data={data as Data} />
 }
 
-/**
- * The document as a standalone HTML page: no site header, no footer, nothing but
- * the quote and the site's own design tokens.
- *
- * This is what the cart's lightbox shows in its iframe and what the PDF renderer
- * prints. It exists because the site's public layout wraps every page in the theme
- * header and footer - right for somebody visiting their quote, wrong inside a
- * lightbox, and wrong on a printed sheet of A4.
- *
- * React's streaming server renderer is used rather than renderToStaticMarkup
- * because the layout may contain async server components (core's own structural
- * blocks are free to be, and an author can put one in a quote document); the
- * streaming renderer awaits them, and the sync one throws.
- */
-export async function renderQuoteDocumentHtml(ctx: QuoteDocContext): Promise<string | null> {
-  const body = await renderQuoteDocument(ctx)
-  if (!body) return null
-
-  const { renderToReadableStream } = await import('react-dom/server')
-  const site = await prisma.siteConfig
-    .findUnique({ where: { id: 'singleton' }, select: { designTokens: true } })
-    .catch(() => null)
-  const tokens = site?.designTokens as DesignTokens | undefined
-  const tokenCss = buildTokenStyles(tokens)
-  const fontHref = buildFontHref(tokens)
-
-  const stream = await renderToReadableStream(<>{body}</>)
-  await stream.allReady
-  const markup = await new Response(stream).text()
-
-  return `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${escapeHtml(ctx.quote.quoteNumber)}</title>
-<!-- Never indexed and never followed: a quote is somebody's private paperwork,
-     reachable by a code rather than by being secret, and a search engine that
-     found one would publish a name, a list and a price. -->
-<meta name="robots" content="noindex, nofollow, noarchive">
-${fontHref ? `<link rel="stylesheet" href="${escapeHtml(fontHref)}">` : ''}
-${tokenCss ? `<style>${tokenCss}</style>` : ''}
-<style>
-  html, body { margin: 0; padding: 0; background: var(--color-bg, #fff); color: var(--color-text, #111); font-family: var(--font-body, system-ui, sans-serif); }
-  .qfs-page { max-width: 820px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
-  /* On paper the browser supplies the margins (see renderQuotePdf), so the page
-     wrapper stops adding its own on top of them. */
-  @media print {
-    html, body { background: #fff; }
-    .qfs-page { max-width: none; padding: 0; }
-  }
-</style>
-</head>
-<body><div class="qfs-page">${markup}</div></body>
-</html>`
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
+// There is deliberately NO "render the document to an HTML string" helper here any
+// more. There was one, built on react-dom/server's renderToReadableStream for a
+// route handler that served the bare document - and it returned a bare 500 on every
+// deployed request: the tree comes out of Puck's RSC renderer, can hold client
+// references, and react-dom/server has no client manifest to resolve those against
+// in a route handler. The bare document is a PAGE now
+// (app/public/quote/[code]/view/page.tsx), which hands the rendering back to Next.
