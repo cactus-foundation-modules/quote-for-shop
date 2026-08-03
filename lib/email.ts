@@ -1,4 +1,5 @@
 import { sendEmail } from '@/lib/email'
+import { renderEmailTemplate } from '@/lib/email/render'
 import { getSiteUrl, isEmailConfigured } from '@/lib/config/env'
 import { getSiteConfig } from '@/lib/config/site'
 import { getShopConfigCached } from '@/modules/shop/lib/config'
@@ -48,15 +49,6 @@ function quoteUrl(siteUrl: string, quote: Quote): string {
   return `${siteUrl.replace(/\/$/, '')}/quote/${encodeURIComponent(quote.code.replace('-', ''))}`
 }
 
-function linesText(quote: Quote): string {
-  return quote.lines
-    .map((line) => {
-      const money = quote.pricesHidden ? '' : ` - ${formatMoney(line.lineTotal, quote.currencySymbol)}`
-      return `${line.quantity} x ${line.name}${money}`
-    })
-    .join('\n')
-}
-
 function linesHtml(quote: Quote): string {
   const rows = quote.lines
     .map((line) => {
@@ -77,10 +69,20 @@ function escapeHtml(value: string): string {
     .replace(/"/g, '&quot;')
 }
 
-async function trySend(payload: { to: string; subject: string; html: string; text: string; replyTo?: string }): Promise<void> {
+/** Renders one of this module's registered templates and posts it. The wording,
+ *  the on/off switch and the wrapper design all come from core's Settings >
+ *  Emails; this only supplies the merge values. */
+async function trySend(
+  key: string,
+  to: string,
+  vars: Record<string, string>,
+  opts?: { replyTo?: string },
+): Promise<void> {
   if (!isEmailConfigured()) return
   try {
-    await sendEmail(payload)
+    const rendered = await renderEmailTemplate(key, vars)
+    if (!rendered) return
+    await sendEmail({ to, subject: rendered.subject, html: rendered.html, text: rendered.text, ...opts })
   } catch (error) {
     // Deliberately swallowed: see the note at the top of this file. Logged so the
     // owner's deployment log still shows what went wrong.
@@ -95,17 +97,13 @@ export async function sendSavedQuoteToShopper(quote: Quote): Promise<void> {
   if (!config.emailShopperCode) return
 
   const site = await siteFacts()
-  const url = quoteUrl(site.url, quote)
-  const expiry = quote.expiresAt ? `\n\nIt is saved until ${quote.expiresAt.toLocaleDateString('en-GB')}.` : ''
-
-  await trySend({
-    to: quote.customerEmail,
-    subject: `Your saved basket at ${site.name} - ${quote.code}`,
-    text: `Here is the basket you saved at ${site.name}.\n\nYour code: ${quote.code}\nView it again: ${url}${expiry}\n\n${linesText(quote)}`,
-    html: `<p>Here is the basket you saved at ${escapeHtml(site.name)}.</p>
-<p><strong>Your code: ${escapeHtml(quote.code)}</strong><br><a href="${escapeHtml(url)}">View your saved basket</a></p>
-${quote.expiresAt ? `<p>It is saved until ${escapeHtml(quote.expiresAt.toLocaleDateString('en-GB'))}.</p>` : ''}
-${linesHtml(quote)}`,
+  await trySend('quote-for-shop.saved-basket', quote.customerEmail, {
+    siteName: site.name,
+    code: quote.code,
+    quoteUrl: quoteUrl(site.url, quote),
+    expiresAt: quote.expiresAt ? quote.expiresAt.toLocaleDateString('en-GB') : '',
+    hasExpiry: quote.expiresAt ? 'true' : 'false',
+    lines: linesHtml(quote),
   })
 }
 
@@ -115,14 +113,13 @@ export async function sendQuoteRequestAck(quote: Quote): Promise<void> {
   const [config, site] = await Promise.all([getQuoteConfigCached(), siteFacts()])
   if (!config.emailShopperCode) return
 
-  const url = quoteUrl(site.url, quote)
-  await trySend({
-    to: quote.customerEmail,
-    subject: `We have your quote request - ${quote.quoteNumber}`,
-    text: `${config.requestThankYou}\n\nReference: ${quote.quoteNumber}\nCode: ${quote.code}\nYour request: ${url}\n\n${linesText(quote)}`,
-    html: `<p>${escapeHtml(config.requestThankYou)}</p>
-<p><strong>Reference: ${escapeHtml(quote.quoteNumber)}</strong><br>Code: ${escapeHtml(quote.code)}<br><a href="${escapeHtml(url)}">View your request</a></p>
-${linesHtml(quote)}`,
+  await trySend('quote-for-shop.request-acknowledged', quote.customerEmail, {
+    siteName: site.name,
+    thankYou: config.requestThankYou,
+    quoteNumber: quote.quoteNumber,
+    code: quote.code,
+    quoteUrl: quoteUrl(site.url, quote),
+    lines: linesHtml(quote),
   })
 }
 
@@ -141,17 +138,23 @@ export async function sendQuoteAlertToOwner(quote: Quote): Promise<void> {
   const admin = `${site.url}/${site.adminPath}/m/quote-for-shop/quotes/${quote.id}`
 
   for (const to of addresses) {
-    await trySend({
+    await trySend(
+      'quote-for-shop.owner-alert',
       to,
-      subject: `New ${what} ${quote.quoteNumber}${quote.company ? ` - ${quote.company}` : ''}`,
-      replyTo: quote.customerEmail || undefined,
-      text: `A new ${what} has come in.\n\n${quote.quoteNumber} (code ${quote.code})\n${who}\n${quote.message ? `\n"${quote.message}"\n` : ''}\n${linesText(quote)}\n\nOpen it: ${admin}`,
-      html: `<p>A new ${what} has come in.</p>
-<p><strong>${escapeHtml(quote.quoteNumber)}</strong> (code ${escapeHtml(quote.code)})<br>${escapeHtml(who)}</p>
-${quote.message ? `<blockquote>${escapeHtml(quote.message)}</blockquote>` : ''}
-${linesHtml(quote)}
-<p><a href="${escapeHtml(admin)}">Open it in the admin</a></p>`,
-    })
+      {
+        siteName: site.name,
+        what,
+        quoteNumber: quote.quoteNumber,
+        companySuffix: quote.company ? ` - ${quote.company}` : '',
+        code: quote.code,
+        who,
+        message: quote.message ?? '',
+        hasMessage: quote.message ? 'true' : 'false',
+        lines: linesHtml(quote),
+        adminUrl: admin,
+      },
+      { replyTo: quote.customerEmail || undefined },
+    )
   }
 }
 
@@ -161,18 +164,19 @@ export async function sendQuoteToCustomer(quote: Quote): Promise<void> {
   if (!isEmailConfigured()) throw new Error('Email is not configured. Add BREVO_API_KEY or SMTP credentials.')
 
   const site = await siteFacts()
-  const url = quoteUrl(site.url, quote)
-  const total = quote.pricesHidden ? '' : `\n\nTotal: ${formatMoney(quote.totals.total, quote.currencySymbol)}`
 
   // Not through trySend: an owner pressing "Send quote" is owed a real error when
   // it does not go, rather than a green tick and silence.
-  await sendEmail({
-    to: quote.customerEmail,
-    subject: `Your quote ${quote.quoteNumber} from ${site.name}`,
-    text: `${quote.reply || 'Here is your quote.'}\n\nQuote ${quote.quoteNumber} (code ${quote.code})\nView and download it: ${url}${total}\n\n${linesText(quote)}`,
-    html: `<p>${escapeHtml(quote.reply || 'Here is your quote.')}</p>
-<p><strong>Quote ${escapeHtml(quote.quoteNumber)}</strong> (code ${escapeHtml(quote.code)})<br><a href="${escapeHtml(url)}">View and download your quote</a></p>
-${linesHtml(quote)}
-${quote.pricesHidden ? '' : `<p><strong>Total: ${escapeHtml(formatMoney(quote.totals.total, quote.currencySymbol))}</strong></p>`}`,
+  const rendered = await renderEmailTemplate('quote-for-shop.quote-sent', {
+    siteName: site.name,
+    reply: quote.reply || 'Here is your quote.',
+    quoteNumber: quote.quoteNumber,
+    code: quote.code,
+    quoteUrl: quoteUrl(site.url, quote),
+    lines: linesHtml(quote),
+    total: quote.pricesHidden ? '' : formatMoney(quote.totals.total, quote.currencySymbol),
+    hasTotal: quote.pricesHidden ? 'false' : 'true',
   })
+  if (!rendered) throw new Error('The quote email has been switched off in Settings, Emails.')
+  await sendEmail({ to: quote.customerEmail, subject: rendered.subject, html: rendered.html, text: rendered.text })
 }
