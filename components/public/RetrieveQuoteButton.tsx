@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { addToCart, clearCart } from '@/modules/shop/components/public/cart'
 import { QUOTE_UI_CSS } from '@/modules/quote-for-shop/components/public/quote-ui-css'
 import { QuoteLightbox } from '@/modules/quote-for-shop/components/public/QuoteLightbox'
-import { formatQuoteCode } from '@/modules/quote-for-shop/lib/code'
+import { QUOTE_CODE_LENGTH, formatQuoteCode } from '@/modules/quote-for-shop/lib/code'
 
 // "Retrieve quote": a code box that puts a saved basket back.
 //
@@ -80,6 +80,10 @@ export function RetrieveQuoteButton({
   }
 
   const money = (amount: number, symbol: string) => `${symbol}${amount.toFixed(2)}`
+  // The eight characters, not the nine on screen: the box formats what is typed as
+  // ACDE-FGHJ, so counting the displayed length let the button go live one
+  // character early and send a code the server could only answer "not found" to.
+  const ready = code.replace(/[^A-Za-z0-9]/g, '').length === QUOTE_CODE_LENGTH
 
   return (
     <>
@@ -109,7 +113,7 @@ export function RetrieveQuoteButton({
             ) : (
               <>
                 <span className="qfs-lb-code">This replaces what is in your basket now.</span>
-                <button type="button" className="qfs-btn qfs-btn-primary" disabled={busy || code.trim().length < 8} onClick={retrieve}>
+                <button type="button" className="qfs-btn qfs-btn-primary" disabled={busy || !ready} onClick={retrieve}>
                   {busy ? 'Looking…' : 'Get my basket back'}
                 </button>
               </>
@@ -155,7 +159,7 @@ export function RetrieveQuoteButton({
                     // Formatted as it is typed, so the box on screen matches the code
                     // on the shopper's email rather than being a run of characters.
                     onChange={(event) => setCode(formatQuoteCode(event.target.value))}
-                    onKeyDown={(event) => { if (event.key === 'Enter' && code.trim().length >= 8) void retrieve() }}
+                    onKeyDown={(event) => { if (event.key === 'Enter' && ready) void retrieve() }}
                   />
                 </div>
                 {error && <p className="qfs-error">{error}</p>}

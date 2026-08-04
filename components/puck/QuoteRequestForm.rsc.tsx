@@ -11,7 +11,9 @@ export async function QuoteRequestFormRsc(props: QuoteRequestFormProps) {
   const config = await getQuoteConfigCached()
   return (
     <QuoteRequestFormClient
-      heading={props.heading?.trim() || config.requestHeading}
+      // NOT falling back to config.requestHeading: the page prints that as its
+      // <h1> directly above this block, and doing both said it twice.
+      heading={props.heading?.trim() || ''}
       intro={props.intro?.trim() || config.requestIntro}
       thankYou={config.requestThankYou}
       submitLabel={props.submitLabel?.trim() || 'Send my request'}

@@ -32,6 +32,8 @@ function formatWhen(value: string | Date): string {
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+const PER_PAGE = 25
+
 export function QuotesScreen() {
   // The admin root is whatever the owner chose at setup, so links are built from
   // the context rather than a hardcoded path.
@@ -42,8 +44,19 @@ export function QuotesScreen() {
   const [status, setStatus] = useState<QuoteStatus | ''>('')
   const [kind, setKind] = useState<QuoteKind | ''>('')
   const [search, setSearch] = useState('')
+  // What is actually queried. Kept apart from what is being typed so the list
+  // does not fire a pair of queries per keystroke - a shop with a few thousand
+  // quotes was sending "j", "jo", "joh", "john" as four separate searches and
+  // rendering whichever came back last.
+  const [appliedSearch, setAppliedSearch] = useState('')
+  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setAppliedSearch(search.trim()), 300)
+    return () => clearTimeout(timer)
+  }, [search])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -51,7 +64,9 @@ export function QuotesScreen() {
       const params = new URLSearchParams()
       if (status) params.set('status', status)
       if (kind) params.set('kind', kind)
-      if (search.trim()) params.set('search', search.trim())
+      if (appliedSearch) params.set('search', appliedSearch)
+      params.set('page', String(page))
+      params.set('perPage', String(PER_PAGE))
       const response = await fetch(`/api/m/quote-for-shop/admin/quotes?${params.toString()}`)
       if (!response.ok) { setError('Could not load the quotes.'); return }
       const data = await response.json()
@@ -64,10 +79,19 @@ export function QuotesScreen() {
     } finally {
       setLoading(false)
     }
-  }, [status, kind, search])
+  }, [status, kind, appliedSearch, page])
 
   // eslint-disable-next-line react-hooks/set-state-in-effect -- delegating to an async loader; every setState runs after an await
   useEffect(() => { void load() }, [load])
+
+  // Narrowing the list puts you back on page one. Staying on page 4 of a filter
+  // that now has one page of results shows an empty table and looks broken.
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- resetting a dependent control, not deriving render state
+  useEffect(() => { setPage(1) }, [status, kind, appliedSearch])
+
+  const pageCount = Math.max(1, Math.ceil(total / PER_PAGE))
+  const firstOnPage = total === 0 ? 0 : (page - 1) * PER_PAGE + 1
+  const lastOnPage = Math.min(page * PER_PAGE, total)
 
   return (
     <div>
@@ -101,13 +125,20 @@ export function QuotesScreen() {
               placeholder="Number, code, name, email or company"
               onChange={(event) => setSearch(event.target.value)}
             />
+            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+              A code works with or without its dash.
+            </span>
           </div>
         </div>
       </section>
 
       <section style={card}>
         <h2 style={{ fontSize: '0.9375rem', margin: '0 0 0.75rem' }}>
-          {loading ? 'Loading…' : `${total} quote${total === 1 ? '' : 's'}`}
+          {loading
+            ? 'Loading…'
+            : total > PER_PAGE
+              ? `${firstOnPage}-${lastOnPage} of ${total} quotes`
+              : `${total} quote${total === 1 ? '' : 's'}`}
         </h2>
 
         {!loading && quotes.length === 0 && (
@@ -163,6 +194,33 @@ export function QuotesScreen() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Without this the list simply stopped at 25 and said nothing about it -
+            the count in the heading was the honest total, and quote 26 was
+            unreachable from the admin at all. */}
+        {pageCount > 1 && (
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '1rem' }}>
+            <button
+              type="button"
+              className="btn"
+              disabled={page <= 1 || loading}
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+            >
+              Previous
+            </button>
+            <span style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+              Page {page} of {pageCount}
+            </span>
+            <button
+              type="button"
+              className="btn"
+              disabled={page >= pageCount || loading}
+              onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
+            >
+              Next
+            </button>
           </div>
         )}
       </section>

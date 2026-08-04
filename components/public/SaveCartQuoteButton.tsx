@@ -204,6 +204,7 @@ export function SaveCartQuoteButton({
                   {copied ? 'Copied' : 'Copy'}
                 </button>
               </span>
+              <a className="qfs-btn" href={saved.url}>Open my quote</a>
               {pdfEnabled && saved.pdfUrl && (
                 // A plain link, not a fetch: the browser's own download handling is
                 // better at saving a file than anything this component could do,
@@ -216,6 +217,17 @@ export function SaveCartQuoteButton({
           }
         >
           <div className="qfs-lb-doc">
+            {/* Inside the panel, because outside it this said nothing to anybody:
+                the lightbox covers the page while it is open, and the notice was
+                unmounted the moment it closed. A shopper whose basket lost a line
+                is exactly the shopper who has to be told. */}
+            {saved.unavailable.length > 0 && (
+              <p className="qfs-error" style={{ marginTop: 0 }}>
+                {saved.unavailable.length === 1 ? 'One item' : `${saved.unavailable.length} items`} could not be
+                quoted and {saved.unavailable.length === 1 ? 'is' : 'are'} not on this quote:{' '}
+                {saved.unavailable.map((item) => `${item.name} (${item.reason})`).join(', ')}.
+              </p>
+            )}
             {docHtml ? (
               // Our own page, from our own origin, fetched over the same session -
               // not third-party markup.
@@ -230,13 +242,6 @@ export function SaveCartQuoteButton({
             )}
           </div>
         </QuoteLightbox>
-      )}
-
-      {stage === 'saved' && saved && saved.unavailable.length > 0 && (
-        <p className="qfs-note">
-          {saved.unavailable.length} item{saved.unavailable.length === 1 ? '' : 's'} could not be quoted:{' '}
-          {saved.unavailable.map((item) => `${item.name} (${item.reason})`).join(', ')}
-        </p>
       )}
     </>
   )

@@ -59,8 +59,12 @@ export function QuoteRequestItemsClient({
       // The shop's own validate, single-flighted with any other cart island on the
       // page - so this list and the basket badge never disagree.
       const data = await postCartValidate<ValidatedLine>(cart)
-      if (cancelled || !data) return
-      setLines(data.lines)
+      if (cancelled) return
+      // `loaded` is set either way. It used to be set only on success, so a
+      // validate that came back empty (a dropped connection, a shop briefly down)
+      // left "Loading your list…" on screen for ever, on the page that stands
+      // where the checkout would be.
+      if (data) setLines(data.lines)
       setLoaded(true)
     }
     void refresh()
@@ -86,7 +90,7 @@ export function QuoteRequestItemsClient({
               <th>Item</th>
               <th className="qfs-doc-num">Qty</th>
               {!hidePrices && <th className="qfs-doc-num">Total</th>}
-              <th aria-hidden="true" />
+              <th className="qfs-doc-num"><span className="sr-only">Remove</span></th>
             </tr>
           </thead>
           <tbody>

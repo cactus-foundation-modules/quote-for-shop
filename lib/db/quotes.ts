@@ -199,14 +199,31 @@ export async function listQuotes(filter: ListQuotesFilter): Promise<{ quotes: Qu
   const kind = filter.kind ?? null
   // ILIKE pattern built here and passed as a parameter, never interpolated: the
   // search box is shopper-supplied text arriving through an admin route.
-  const search = filter.search?.trim() ? `%${filter.search.trim()}%` : null
+  //
+  // `%` and `_` are escaped first, because a typed one is a literal to whoever
+  // typed it, not a wildcard - a search for "50%" that quietly matched every
+  // quote in the shop is not a search. (ESCAPE '\' below is what makes the
+  // backslash mean anything to ILIKE.)
+  const raw = filter.search?.trim() ?? ''
+  const search = raw ? `%${raw.replace(/[\\%_]/g, (ch) => `\\${ch}`)}%` : null
+  // A retrieval code is STORED with its hyphen (ACDE-FGHJ) and is very often
+  // pasted back without one - out of a URL, or off a shopper's email where they
+  // retyped it. So the code column is also matched against the search with every
+  // non-alphanumeric taken out of both sides. Only the code: doing it to names
+  // would make "Smith" match "S-m-i-t-h", which nobody wants.
+  const codeSearch = raw ? `%${raw.replace(/[^A-Za-z0-9]/g, '').replace(/[\\%_]/g, (ch) => `\\${ch}`)}%` : null
 
   const rows = await prisma.$queryRaw<QuoteRow[]>`
     SELECT * FROM "qfs_quotes"
     WHERE (${status}::text IS NULL OR "status" = ${status})
       AND (${kind}::text IS NULL OR "kind" = ${kind})
-      AND (${search}::text IS NULL OR "quote_number" ILIKE ${search} OR "code" ILIKE ${search}
-           OR "customer_name" ILIKE ${search} OR "customer_email" ILIKE ${search} OR "company" ILIKE ${search})
+      AND (${search}::text IS NULL
+           OR "quote_number" ILIKE ${search} ESCAPE '\'
+           OR "code" ILIKE ${search} ESCAPE '\'
+           OR REPLACE("code", '-', '') ILIKE ${codeSearch} ESCAPE '\'
+           OR "customer_name" ILIKE ${search} ESCAPE '\'
+           OR "customer_email" ILIKE ${search} ESCAPE '\'
+           OR "company" ILIKE ${search} ESCAPE '\')
     ORDER BY "created_at" DESC
     LIMIT ${perPage} OFFSET ${offset}
   `
@@ -214,8 +231,13 @@ export async function listQuotes(filter: ListQuotesFilter): Promise<{ quotes: Qu
     SELECT COUNT(*)::bigint AS count FROM "qfs_quotes"
     WHERE (${status}::text IS NULL OR "status" = ${status})
       AND (${kind}::text IS NULL OR "kind" = ${kind})
-      AND (${search}::text IS NULL OR "quote_number" ILIKE ${search} OR "code" ILIKE ${search}
-           OR "customer_name" ILIKE ${search} OR "customer_email" ILIKE ${search} OR "company" ILIKE ${search})
+      AND (${search}::text IS NULL
+           OR "quote_number" ILIKE ${search} ESCAPE '\'
+           OR "code" ILIKE ${search} ESCAPE '\'
+           OR REPLACE("code", '-', '') ILIKE ${codeSearch} ESCAPE '\'
+           OR "customer_name" ILIKE ${search} ESCAPE '\'
+           OR "customer_email" ILIKE ${search} ESCAPE '\'
+           OR "company" ILIKE ${search} ESCAPE '\')
   `
   return { quotes: rows.map(toQuote), total: Number(counted[0]?.count ?? 0) }
 }

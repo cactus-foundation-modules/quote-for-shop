@@ -87,7 +87,7 @@ export function QuoteRequestFormClient({
       <>
         <style dangerouslySetInnerHTML={{ __html: QUOTE_UI_CSS }} />
         <div style={{ display: 'grid', gap: '0.75rem' }}>
-          <h2 style={{ margin: 0, fontSize: '1.25rem' }}>{heading}</h2>
+          {heading && <h2 style={{ margin: 0, fontSize: '1.25rem' }}>{heading}</h2>}
           <p style={{ margin: 0 }}>{thankYou}</p>
           <p className="qfs-note" style={{ marginTop: 0 }}>
             Your reference is <strong>{done.quoteNumber}</strong>, and your code is <strong>{done.code}</strong>.
@@ -104,7 +104,10 @@ export function QuoteRequestFormClient({
     <>
       <style dangerouslySetInnerHTML={{ __html: QUOTE_UI_CSS }} />
       <div style={{ display: 'grid', gap: '0.75rem' }}>
-        <h2 style={{ margin: 0, fontSize: '1.25rem' }}>{heading}</h2>
+        {/* Blank means "the page above already says it" - see the note on the
+            /quote page. A block dropped somewhere that needs its own heading is
+            given one on the block. */}
+        {heading && <h2 style={{ margin: 0, fontSize: '1.25rem' }}>{heading}</h2>}
         {intro && <p style={{ margin: 0, color: 'var(--color-text-muted)' }}>{intro}</p>}
 
         {!preview && itemCount === 0 ? (

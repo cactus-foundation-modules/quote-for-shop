@@ -32,6 +32,11 @@ export default async function QuoteRequestPage() {
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '2rem 1.5rem', display: 'grid', gap: '2rem' }}>
       {gate.staffPreview && <ShopStaffPreviewBanner />}
+      {/* This page's one and only heading. The form used to print it a second time
+          immediately underneath - its own heading field falls back to the same
+          setting - so every shop that had not gone and typed something different
+          into the block read "Request a quote / Request a quote". The form now
+          heads itself only when an author has actually given it a heading. */}
       <h1 style={{ fontSize: '1.75rem', margin: 0 }}>{config.requestHeading}</h1>
       {layout?.builderData ? (
         <Render config={getModuleLayoutPuckRscConfig('quoteRequest') as any} data={layout.builderData as Data} />
@@ -43,7 +48,7 @@ export default async function QuoteRequestPage() {
             currencySymbol={shop.currencySymbol}
           />
           <QuoteRequestFormClient
-            heading={config.requestHeading}
+            heading=""
             intro={config.requestIntro}
             thankYou={config.requestThankYou}
             submitLabel="Send my request"

@@ -6,6 +6,7 @@ import { getShopConfigCached } from '@/modules/shop/lib/config'
 import type { ShpAddress } from '@/modules/shop/lib/types'
 import { requireQuoteUser } from '@/modules/quote-for-shop/lib/access'
 import { getQuoteById, markQuoteConverted } from '@/modules/quote-for-shop/lib/db/quotes'
+import { lineTaxAmount, quoteTaxRate } from '@/modules/quote-for-shop/lib/order-tax'
 
 // POST - turn an accepted quote into a real order.
 //
@@ -91,7 +92,11 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     phone: supplied?.phone || quote.customerPhone || undefined,
   }
 
-  const taxRate = quote.totals.subtotal > 0 ? quote.totals.taxAmount / quote.totals.subtotal : 0
+  // The rate the quote was worked out at, recovered from its own totals. The
+  // denominator is the whole point - see lib/order-tax.ts, where it is pinned by
+  // unit tests, because a wrong VAT rate on a real order is found by an accountant
+  // months later rather than by anybody looking at this screen.
+  const taxRate = quoteTaxRate(quote.totals)
 
   const order = await createPendingOrder({
     orderNumber,
@@ -120,11 +125,18 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       quantity: line.quantity,
       unitPrice: line.unitPrice,
       taxRate,
-      taxAmount: Math.round(line.lineTotal * taxRate * 100) / 100,
+      taxAmount: lineTaxAmount(line.lineTotal, taxRate, quote.totals.taxIncluded),
       total: line.lineTotal,
       isPreOrder: false,
       preOrderDispatchDate: null,
-      lineMeta: null,
+      // The chosen options, the delivery service, the engraving - everything the
+      // quote listed under the line. This used to be dropped on the floor, so a
+      // customer accepted "Oak desk 1600mm, Oak / Silver legs, delivered and
+      // installed" and the warehouse was handed "Oak desk 1600mm". Shop prints
+      // these on the order screen, the picking list and the receipt.
+      lineMeta: line.detail.length > 0
+        ? { fields: line.detail.map((row) => ({ label: row.label, value: row.value })) }
+        : null,
     })),
   })
 
