@@ -1,7 +1,9 @@
 import { resolveCartLines, resolveOrderTotals, type ResolvedCartLine } from '@/modules/shop/lib/checkout'
 import { getShopConfigCached } from '@/modules/shop/lib/config'
 import { displayOrderTotals, type PriceDisplay } from '@/modules/shop/lib/tax-display-shared'
+import { getDefaultTaxZoneId, getTaxRateForZoneAndClass } from '@/modules/shop/lib/db/tax-shipping'
 import { getProductMediaForProducts } from '@/modules/shop/lib/db/products'
+import { readDeliveryPromise } from '@/modules/quote-for-shop/lib/delivery-timing'
 import type { QuoteCartLine, QuoteLine, QuoteTotals } from '@/modules/quote-for-shop/lib/types'
 
 // Turning a live cart into a quote.
@@ -11,10 +13,19 @@ import type { QuoteCartLine, QuoteLine, QuoteTotals } from '@/modules/quote-for-
 // module works nothing out for itself: it takes the resolved lines, the resolved
 // totals and the shop's display-tax conversion, and writes them down.
 //
-// Two things a quote deliberately leaves blank, because they cannot be known
-// without an address: tax and delivery. Both come out as zero and the document
-// says so in words, rather than a figure being invented and then contradicted at
-// the order stage.
+// DELIVERY is the one figure a quote deliberately leaves blank, because it cannot
+// be known without an address. It comes out as zero and the document says so in
+// words, rather than a figure being invented and then contradicted at the order
+// stage.
+//
+// TAX used to be left blank on the same reasoning, and that was simply wrong. A
+// zero tax line is dropped from the document altogether, so every quote a VAT-
+// registered shop had ever sent showed no VAT row at all - which is not "we don't
+// know yet", it reads as "there isn't any". The basket has the same problem and
+// solved it long ago: quote it against the shop's DEFAULT zone (see
+// getDefaultTaxZoneId), the way a catalogue price has to be printed before anyone
+// knows where the parcel is going. The checkout still resolves the real zone from
+// the delivery postcode and charges from that.
 
 /** The per-line detail a resolver contributed, flattened to label/value pairs for
  *  printing. Shop's own display title is folded in first, because for a
@@ -27,6 +38,12 @@ function detailFor(line: ResolvedCartLine): QuoteLine['detail'] {
   }
   return detail
 }
+
+// The figures behind a dated delivery promise, where a cart-line resolver left
+// any, are recorded beside the prose so the document can offer to print "10
+// working days from order" instead of a date that will be weeks stale by the
+// time the quote is opened. See lib/delivery-timing.ts for the reading of it -
+// pure, duck-typed, and unit-tested rather than proved by opening a PDF.
 
 export type QuoteSnapshot = {
   lines: QuoteLine[]
@@ -50,9 +67,10 @@ export async function buildQuoteSnapshot(
   cart: QuoteCartLine[],
   opts?: { couponCode?: string | null; customerEmail?: string | null },
 ): Promise<QuoteSnapshot> {
-  const [config, resolved] = await Promise.all([
+  const [config, resolved, defaultZoneId] = await Promise.all([
     getShopConfigCached(),
     resolveCartLines(cart),
+    getDefaultTaxZoneId(),
   ])
 
   const available = resolved.filter((line) => line.available)
@@ -62,12 +80,45 @@ export async function buildQuoteSnapshot(
 
   const totals = await resolveOrderTotals({
     lines: available,
-    // No address, so no tax zone and no delivery rate. See the note above.
+    // Deliberately no zone here, even though one was just resolved: handing
+    // resolveOrderTotals a zone also makes it pick that zone's first shipping
+    // rate and charge for it, and a quote must not invent a delivery price for
+    // an address nobody has given. The tax that zone implies is worked out
+    // below instead, which is the half a quote genuinely can state.
     zoneId: null,
     shippingRateId: null,
     couponCode: opts?.couponCode ?? null,
     customerEmail: opts?.customerEmail ?? null,
   })
+
+  // One rate lookup per distinct tax class in the quote, not one per line: a
+  // quote for twelve chairs on the same class would otherwise fire twelve
+  // identical queries. '' stands in for "no class", which is always zero-rated.
+  const taxRateByClass = new Map<string, number>()
+  if (defaultZoneId) {
+    const classIds = [...new Set(available.map((line) => line.product.taxClassId ?? ''))]
+    await Promise.all(classIds.map(async (classId) => {
+      taxRateByClass.set(classId, classId ? await getTaxRateForZoneAndClass(defaultZoneId, classId) : 0)
+    }))
+  }
+
+  // Same arithmetic resolveOrderTotals does, against the default zone's rates: a
+  // discount comes off before tax, and whether tax is inside the stored price or
+  // added to it is the shop's own setting, never a guess.
+  const discountRatio = totals.subtotal > 0 ? totals.discountAmount / totals.subtotal : 0
+  let taxTotal = 0
+  for (const line of available) {
+    const rate = taxRateByClass.get(line.product.taxClassId ?? '') ?? 0
+    if (!rate) continue
+    const taxable = line.lineSubtotal * (1 - discountRatio)
+    taxTotal += config.taxMode === 'INCLUSIVE' ? taxable - taxable / (1 + rate) : taxable * rate
+  }
+  const taxAmount = round2(taxTotal)
+  // On an INCLUSIVE shop the tax is a slice of a total that already carries it,
+  // so the bottom line must not move. On an EXCLUSIVE shop it is money on top of
+  // the line prices, and a total that left it out was quoting less than the shop
+  // would charge.
+  const total = config.taxMode === 'INCLUSIVE' ? totals.total : round2(totals.total + taxAmount)
 
   // The same conversion the cart and the checkout apply, so the quote reads the
   // way the basket did. The TOTAL is left alone by design - see displayOrderTotals.
@@ -76,7 +127,7 @@ export async function buildQuoteSnapshot(
     storedIncludesTax: config.taxMode === 'INCLUSIVE',
     suffix: config.priceDisplayTaxSuffix.trim(),
   }
-  const shown = displayOrderTotals(totals, display)
+  const shown = displayOrderTotals({ ...totals, taxAmount }, display)
 
   // One image per line, so the document has something to show. Batched: a quote
   // for thirty items must not be thirty media queries.
@@ -108,6 +159,7 @@ export async function buildQuoteSnapshot(
     detail: detailFor(line),
     lineId: line.lineId ?? null,
     meta: metaByKey.get(line.lineId ?? line.product.id) ?? null,
+    delivery: readDeliveryPromise(line.lineMeta),
   }))
 
   return {
@@ -118,9 +170,9 @@ export async function buildQuoteSnapshot(
       goodsSubtotal: shown.goodsSubtotal,
       discountAmount: totals.discountAmount,
       shippingAmount: totals.shippingAmount,
-      taxAmount: totals.taxAmount,
+      taxAmount,
       taxIncluded: shown.taxIncluded,
-      total: totals.total,
+      total,
     },
     currency: config.currency,
     currencySymbol: config.currencySymbol,

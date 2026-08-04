@@ -24,17 +24,18 @@ export function quoteDocumentStarters() {
       publishByDefault: true,
       data: {
         content: [
-          block('QuoteDocHeader', 'quote-doc-head', { heading: '', showLogo: 'yes', showCode: 'yes' }),
-          block('QuoteDocCustomer', 'quote-doc-for', { label: 'Prepared for', showMessage: 'yes' }),
+          block('QuoteDocHeader', 'quote-doc-head', { heading: '', fontFamily: '', showLogo: 'yes', showName: 'yes', showCode: 'yes' }),
+          block('QuoteDocCustomer', 'quote-doc-for', { label: 'Prepared for', fontFamily: '', showMessage: 'yes' }),
           block('QuoteDocLines', 'quote-doc-lines', {
-            showImages: 'no', showSku: 'yes',
+            fontFamily: '', showImages: 'no', imageSize: 'medium', showSku: 'yes',
+            deliveryTiming: 'dates', leadTimeSuffix: 'from order',
             itemLabel: 'Item', qtyLabel: 'Qty', priceLabel: 'Unit price', totalLabel: 'Total',
           }),
           block('QuoteDocTotals', 'quote-doc-totals', {
-            subtotalLabel: 'Subtotal', taxLabel: 'VAT', totalLabel: 'Total',
+            fontFamily: '', subtotalLabel: 'Subtotal', taxLabel: 'VAT', totalLabel: 'Total',
             note: 'Delivery is worked out once we have a delivery address.',
           }),
-          block('QuoteDocNotes', 'quote-doc-notes', { showReply: 'yes', showValidity: 'yes', showTerms: 'yes', termsHeading: 'Terms' }),
+          block('QuoteDocNotes', 'quote-doc-notes', { fontFamily: '', showReply: 'yes', showValidity: 'yes', showTerms: 'yes', termsHeading: 'Terms' }),
         ],
         root: { props: {} },
         zones: {},
@@ -46,17 +47,18 @@ export function quoteDocumentStarters() {
       description: 'The same quote with a thumbnail against every line - better for furniture and worse for long lists.',
       data: {
         content: [
-          block('QuoteDocHeader', 'quote-doc-head', { heading: '', showLogo: 'yes', showCode: 'yes' }),
-          block('QuoteDocCustomer', 'quote-doc-for', { label: 'Prepared for', showMessage: 'yes' }),
+          block('QuoteDocHeader', 'quote-doc-head', { heading: '', fontFamily: '', showLogo: 'yes', showName: 'yes', showCode: 'yes' }),
+          block('QuoteDocCustomer', 'quote-doc-for', { label: 'Prepared for', fontFamily: '', showMessage: 'yes' }),
           block('QuoteDocLines', 'quote-doc-lines', {
-            showImages: 'yes', showSku: 'yes',
+            fontFamily: '', showImages: 'yes', imageSize: 'medium', showSku: 'yes',
+            deliveryTiming: 'dates', leadTimeSuffix: 'from order',
             itemLabel: 'Item', qtyLabel: 'Qty', priceLabel: 'Unit price', totalLabel: 'Total',
           }),
           block('QuoteDocTotals', 'quote-doc-totals', {
-            subtotalLabel: 'Subtotal', taxLabel: 'VAT', totalLabel: 'Total',
+            fontFamily: '', subtotalLabel: 'Subtotal', taxLabel: 'VAT', totalLabel: 'Total',
             note: 'Delivery is worked out once we have a delivery address.',
           }),
-          block('QuoteDocNotes', 'quote-doc-notes', { showReply: 'yes', showValidity: 'yes', showTerms: 'yes', termsHeading: 'Terms' }),
+          block('QuoteDocNotes', 'quote-doc-notes', { fontFamily: '', showReply: 'yes', showValidity: 'yes', showTerms: 'yes', termsHeading: 'Terms' }),
         ],
         root: { props: {} },
         zones: {},
@@ -68,12 +70,13 @@ export function quoteDocumentStarters() {
       description: 'Heading and items only. For a shop that prices by hand and would rather not print a total it has not agreed to.',
       data: {
         content: [
-          block('QuoteDocHeader', 'quote-doc-head', { heading: '', showLogo: 'yes', showCode: 'yes' }),
+          block('QuoteDocHeader', 'quote-doc-head', { heading: '', fontFamily: '', showLogo: 'yes', showName: 'yes', showCode: 'yes' }),
           block('QuoteDocLines', 'quote-doc-lines', {
-            showImages: 'no', showSku: 'yes',
+            fontFamily: '', showImages: 'no', imageSize: 'medium', showSku: 'yes',
+            deliveryTiming: 'dates', leadTimeSuffix: 'from order',
             itemLabel: 'Item', qtyLabel: 'Qty', priceLabel: 'Unit price', totalLabel: 'Total',
           }),
-          block('QuoteDocNotes', 'quote-doc-notes', { showReply: 'yes', showValidity: 'yes', showTerms: 'no', termsHeading: 'Terms' }),
+          block('QuoteDocNotes', 'quote-doc-notes', { fontFamily: '', showReply: 'yes', showValidity: 'yes', showTerms: 'no', termsHeading: 'Terms' }),
         ],
         root: { props: {} },
         zones: {},

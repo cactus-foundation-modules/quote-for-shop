@@ -77,12 +77,20 @@ export const SAMPLE_QUOTE_CONTEXT: QuoteDocContext = {
       {
         productId: 'sample-1', name: 'Oak desk 1600mm', sku: 'DSK-1600-OAK', slug: null, imageUrl: null,
         quantity: 4, unitPrice: 249, lineTotal: 996,
-        detail: [{ label: 'Options', value: 'Oak / Silver legs' }], lineId: null, meta: null,
+        detail: [
+          { label: 'Options', value: 'Oak / Silver legs' },
+          // Dated wording plus the figures behind it, so an author can see the
+          // Items block's delivery-timing switch actually change something on
+          // the canvas rather than having to publish and find out.
+          { label: 'Delivery', value: 'Delivered and installed - by Friday 14th of August' },
+        ],
+        lineId: null, meta: null,
+        delivery: { detailLabel: 'Delivery', text: 'Delivered and installed', leadDays: 10 },
       },
       {
         productId: 'sample-2', name: 'Task chair', sku: 'CHR-TASK-BLK', slug: null, imageUrl: null,
         quantity: 4, unitPrice: 129, lineTotal: 516,
-        detail: [], lineId: null, meta: null,
+        detail: [], lineId: null, meta: null, delivery: null,
       },
     ],
     totals: {

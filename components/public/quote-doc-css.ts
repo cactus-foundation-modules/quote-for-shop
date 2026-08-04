@@ -4,7 +4,22 @@
 // Colours are semantic tokens, never hex, so a document sits inside the site's
 // own theme in light and dark alike - with one exception, marked below: the print
 // rules force ink-on-paper, because a dark-mode PDF is a sheet of black toner.
+//
+// Typefaces are tokens for the same reason, and for one more: core styles the
+// site's fonts with `main …` rules, and two of the three surfaces this document
+// appears on are not inside `main` - the cart's preview panel is lifted out of
+// the page and portalled to <body>. So the document asked for the site's fonts
+// and got the browser's default on the very surface most shoppers see first,
+// while the heading alone came out right on the others. Binding each part to the
+// same variables Appearance > Styles emits settles all three at once. A block
+// whose own Font field is set overrides these inline, which is why they are
+// plain class rules and not !important.
 export const QUOTE_DOC_CSS = `
+.qfs-doc-head, .qfs-doc-intro, .qfs-doc-for, .qfs-doc-lines, .qfs-doc-poa,
+.qfs-doc-totals, .qfs-doc-note, .qfs-doc-notes { font-family: var(--font-body, var(--font-sans, inherit)); }
+.qfs-doc-h1 { font-family: var(--h1-family, var(--font-heading, var(--font-body, inherit))); font-weight: var(--h1-weight, 700); letter-spacing: var(--h1-letter-spacing, normal); text-transform: var(--h1-transform, none); }
+.qfs-doc-h2 { font-family: var(--h2-family, var(--font-heading, var(--font-body, inherit))); font-weight: var(--h2-weight, 700); letter-spacing: var(--h2-letter-spacing, normal); text-transform: var(--h2-transform, none); }
+
 .qfs-doc-head { display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: space-between; align-items: flex-start; padding-bottom: 1rem; border-bottom: 1px solid var(--color-border); }
 .qfs-doc-brand { display: flex; align-items: center; gap: 0.75rem; }
 .qfs-doc-logo { max-height: 48px; max-width: 200px; width: auto; height: auto; }
@@ -28,6 +43,12 @@ export const QUOTE_DOC_CSS = `
 .qfs-doc-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .qfs-doc-imgcol { width: 56px; padding-right: 0.75rem; }
 .qfs-doc-thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; border: 1px solid var(--color-border); }
+/* Picture size, set per document on the Items block. Medium is the size the
+   thumbnails have always been, so a document that says nothing keeps its look. */
+.qfs-doc-lines.qfs-img-sm .qfs-doc-imgcol { width: 44px; }
+.qfs-doc-lines.qfs-img-sm .qfs-doc-thumb { width: 36px; height: 36px; }
+.qfs-doc-lines.qfs-img-lg .qfs-doc-imgcol { width: 104px; }
+.qfs-doc-lines.qfs-img-lg .qfs-doc-thumb { width: 96px; height: 96px; }
 .qfs-doc-name { display: block; font-weight: 500; }
 .qfs-doc-sku { display: block; font-size: 0.8125rem; color: var(--color-text-muted); }
 .qfs-doc-detail { list-style: none; margin: 0.25rem 0 0; padding: 0; display: grid; gap: 0.125rem; font-size: 0.8125rem; color: var(--color-text-muted); }

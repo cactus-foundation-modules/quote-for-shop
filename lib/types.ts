@@ -24,6 +24,24 @@ export type QuoteLine = {
   lineId: string | null
   /** The raw per-line meta, kept verbatim for the same reason. */
   meta: Record<string, unknown> | null
+  /** The delivery promise behind one of the `detail` rows above, in figures
+   *  rather than prose, where a cart-line resolver published one. It lets the
+   *  document restate a dated promise as a lead time: a quote is read weeks
+   *  after it is written, and a date worked out on the day it was saved is
+   *  usually in the past by then, while "10 working days from order" still
+   *  means what it meant. Absent on a line no resolver dated, and on every
+   *  quote saved before this was recorded - both print exactly as quoted. */
+  delivery?: QuoteDeliveryPromise | null
+}
+
+/** `detailLabel` names which of the line's detail rows this promise is the
+ *  figures behind, so restating one never has to parse its own sentence back
+ *  apart. `text` is the service as the resolver named it. */
+export type QuoteDeliveryPromise = {
+  detailLabel: string
+  text: string
+  /** Working days from the order to the date that was quoted. */
+  leadDays: number
 }
 
 /** The money on a quote. Mirrors the shop's own order totals, minus anything

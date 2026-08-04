@@ -24,6 +24,14 @@ const LineSchema = z.object({
   detail: z.array(z.object({ label: z.string().max(200), value: z.string().max(600) })).max(40),
   lineId: z.string().nullable(),
   meta: z.record(z.unknown()).nullable(),
+  // Listed so it survives an edit: anything the schema does not name is stripped,
+  // and a line that lost its delivery figures here would quietly stop being able
+  // to state its promise as a lead time.
+  delivery: z.object({
+    detailLabel: z.string().max(200),
+    text: z.string().max(400),
+    leadDays: z.number().int().min(0).max(3650),
+  }).nullable().optional(),
 })
 
 const Body = z.object({
