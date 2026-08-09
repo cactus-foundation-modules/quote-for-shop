@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 import { googleFontHrefForFamily } from '@/lib/design/tokens'
 import { SiteFontField } from '@/lib/puck/fields/registry'
 import { formatMoney } from '@/modules/shop/lib/money'
+import { sortLinesByGroup } from '@/modules/shop/lib/cart-group'
 import { QUOTE_DOC_CSS } from '@/modules/quote-for-shop/components/public/quote-doc-css'
 import { restateDelivery } from '@/modules/quote-for-shop/lib/delivery-timing'
 import { SAMPLE_QUOTE_CONTEXT, type QuoteDocContext } from '@/modules/quote-for-shop/lib/doc-context'
@@ -242,7 +243,14 @@ export function QuoteDocLines(props: LinesProps) {
           </tr>
         </thead>
         <tbody>
-          {quote.lines.map((line, index) => (
+          {/* Grouped lines (a product and its accessories) sorted together, via
+              the same helper the basket uses - the document and the basket may
+              never disagree about who belongs with whom. Attachments indent
+              inside the Item cell so the money columns stay ruled. */}
+          {sortLinesByGroup(quote.lines).map((line, index) => {
+            const caption = line.group?.role === 'attachment' ? line.group.caption : undefined
+            const indent = line.group?.role === 'attachment' ? Math.max(0, (line.group.depth ?? 1) - 1) * 0.75 : 0
+            return (
             <tr key={line.lineId ?? `${line.productId ?? 'line'}-${index}`}>
               {showImages && (
                 <td className="qfs-doc-imgcol">
@@ -253,21 +261,25 @@ export function QuoteDocLines(props: LinesProps) {
                 </td>
               )}
               <td>
-                <span className="qfs-doc-name">{line.name}</span>
-                {showSku && line.sku && <span className="qfs-doc-sku">{line.sku}</span>}
-                {line.detail.length > 0 && (
-                  <ul className="qfs-doc-detail">
-                    {restateDelivery(line, props.deliveryTiming, props.leadTimeSuffix).map((row, i) => (
-                      <li key={i}><span>{row.label}:</span> {row.value}</li>
-                    ))}
-                  </ul>
-                )}
+                <div style={caption ? { paddingLeft: `${0.875 + indent}rem`, borderLeft: '2px solid var(--color-border)' } : undefined}>
+                  {caption && <span className="qfs-doc-sku"><span aria-hidden="true">↳ </span>{caption}</span>}
+                  <span className="qfs-doc-name">{line.name}</span>
+                  {showSku && line.sku && <span className="qfs-doc-sku">{line.sku}</span>}
+                  {line.detail.length > 0 && (
+                    <ul className="qfs-doc-detail">
+                      {restateDelivery(line, props.deliveryTiming, props.leadTimeSuffix).map((row, i) => (
+                        <li key={i}><span>{row.label}:</span> {row.value}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </td>
               <td className="qfs-doc-num">{line.quantity}</td>
               {showMoney && <td className="qfs-doc-num">{formatMoney(line.unitPrice, quote.currencySymbol)}</td>}
               {showMoney && <td className="qfs-doc-num">{formatMoney(line.lineTotal, quote.currencySymbol)}</td>}
             </tr>
-          ))}
+            )
+          })}
           {quote.lines.length === 0 && (
             <tr>
               <td colSpan={5} className="qfs-doc-empty">There is nothing on this quote.</td>

@@ -24,6 +24,10 @@ export type QuoteLine = {
   lineId: string | null
   /** The raw per-line meta, kept verbatim for the same reason. */
   meta: Record<string, unknown> | null
+  /** Shop's generic basket grouping (a product and its accessories), carried so
+   *  the document keeps the set together exactly as the basket did. Absent on
+   *  quotes saved before it existed, which print flat as they always did. */
+  group?: { key: string; role: 'main' | 'attachment'; caption?: string; depth?: number; order?: number } | null
   /** The delivery promise behind one of the `detail` rows above, in figures
    *  rather than prose, where a cart-line resolver published one. It lets the
    *  document restate a dated promise as a lead time: a quote is read weeks

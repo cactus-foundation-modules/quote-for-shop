@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { getCart, setLineQuantity, removeFromCart, subscribeCart, cartLineKey } from '@/modules/shop/components/public/cart'
+import { sortLinesByGroup } from '@/modules/shop/lib/cart-group'
 import { postCartValidate } from '@/modules/shop/components/public/validated-cache'
 import { QUOTE_UI_CSS } from '@/modules/quote-for-shop/components/public/quote-ui-css'
 import { QUOTE_DOC_CSS } from '@/modules/quote-for-shop/components/public/quote-doc-css'
@@ -29,6 +30,9 @@ type ValidatedLine = {
   imageUrl: string | null
   lineId?: string | null
   displayTitle?: { name: string; secondary?: string | null } | null
+  // Shop's generic basket grouping (a product and its accessories) - this list
+  // keeps the set together exactly as the basket does. See shop's cart-group.
+  group?: { key: string; role: 'main' | 'attachment'; caption?: string; depth?: number; order?: number } | null
 }
 
 const SAMPLE: ValidatedLine[] = [
@@ -94,15 +98,19 @@ export function QuoteRequestItemsClient({
             </tr>
           </thead>
           <tbody>
-            {lines.map((line) => {
+            {sortLinesByGroup(lines).map((line) => {
               const key = cartLineKey({ productId: line.productId, lineId: line.lineId ?? undefined })
               const name = line.displayTitle?.name || line.name
+              const caption = line.group?.role === 'attachment' ? line.group.caption : undefined
               return (
                 <tr key={key}>
                   <td>
-                    <span className="qfs-doc-name">{name}</span>
-                    {line.displayTitle?.secondary && <span className="qfs-doc-sku">{line.displayTitle.secondary}</span>}
-                    {!line.available && <span className="qfs-doc-sku">{line.availabilityReason}</span>}
+                    <span style={caption ? { display: 'block', paddingLeft: '0.875rem', borderLeft: '2px solid var(--color-border)' } : undefined}>
+                      {caption && <span className="qfs-doc-sku"><span aria-hidden="true">↳ </span>{caption}</span>}
+                      <span className="qfs-doc-name">{name}</span>
+                      {line.displayTitle?.secondary && <span className="qfs-doc-sku">{line.displayTitle.secondary}</span>}
+                      {!line.available && <span className="qfs-doc-sku">{line.availabilityReason}</span>}
+                    </span>
                   </td>
                   <td className="qfs-doc-num">
                     <input

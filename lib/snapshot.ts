@@ -160,6 +160,7 @@ export async function buildQuoteSnapshot(
     lineId: line.lineId ?? null,
     meta: metaByKey.get(line.lineId ?? line.product.id) ?? null,
     delivery: readDeliveryPromise(line.lineMeta),
+    group: line.group ?? null,
   }))
 
   return {
