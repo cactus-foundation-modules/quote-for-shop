@@ -22,7 +22,7 @@ import type { Quote, QuoteLine, QuoteStatus } from '@/modules/quote-for-shop/lib
 // typing prices, that is not a rounding error, it is the feature not working.
 
 const card = { border: '1px solid var(--color-border)', borderRadius: 12, padding: '1rem 1.25rem', background: 'var(--color-surface)', marginBottom: '1.5rem' } as const
-const labelStyle = { fontSize: '0.8125rem', color: 'var(--color-text-muted)' } as const
+const labelStyle = { fontSize: '0.8125rem', color: 'var(--color-text-secondary)' } as const
 const cell = { padding: '0.5rem 0.75rem 0.5rem 0', borderBottom: '1px solid var(--color-border)' } as const
 
 const STATUSES: Array<{ value: QuoteStatus; label: string }> = [
@@ -251,7 +251,7 @@ export function QuoteDetailScreen({ quoteId }: { quoteId: string }) {
   }
 
   if (error && !quote) return <div className="alert alert-danger" role="alert">{error}</div>
-  if (!quote) return <p style={{ color: 'var(--color-text-muted)' }}>Loading…</p>
+  if (!quote) return <p style={{ color: 'var(--color-text-secondary)' }}>Loading…</p>
 
   const symbol = quote.currencySymbol
   const subtotal = round2(rows.reduce((sum, row) => sum + row.line.lineTotal, 0))
@@ -337,7 +337,7 @@ export function QuoteDetailScreen({ quoteId }: { quoteId: string }) {
           </div>
         </div>
         {quote.message && (
-          <blockquote style={{ margin: '0.75rem 0 0', padding: '0 0 0 0.875rem', borderLeft: '3px solid var(--color-border)', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+          <blockquote style={{ margin: '0.75rem 0 0', padding: '0 0 0 0.875rem', borderLeft: '3px solid var(--color-border)', color: 'var(--color-text-secondary)', fontStyle: 'italic' }}>
             {quote.message}
           </blockquote>
         )}

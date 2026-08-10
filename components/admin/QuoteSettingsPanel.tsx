@@ -12,7 +12,7 @@ import type { QfsConfig } from '@/modules/quote-for-shop/lib/config'
 // owner picks it - a shop that stops taking money by accident is a bad afternoon.
 
 const card = { border: '1px solid var(--color-border)', borderRadius: 12, padding: '1rem 1.25rem', background: 'var(--color-surface)', marginBottom: '1.5rem' } as const
-const label = { fontSize: '0.8125rem', color: 'var(--color-text-muted)' } as const
+const label = { fontSize: '0.8125rem', color: 'var(--color-text-secondary)' } as const
 const field = { display: 'grid', gap: '0.25rem', marginBottom: '0.75rem' } as const
 
 export function QuoteSettingsPanel() {
@@ -60,7 +60,7 @@ export function QuoteSettingsPanel() {
   }
 
   if (error && !config) return <div className="alert alert-danger" role="alert">{error}</div>
-  if (!config) return <p style={{ color: 'var(--color-text-muted)' }}>Loading…</p>
+  if (!config) return <p style={{ color: 'var(--color-text-secondary)' }}>Loading…</p>
 
   const quoteOnly = config.mode === 'QUOTE_ONLY'
 

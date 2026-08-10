@@ -100,7 +100,7 @@ export function QuotesScreen() {
       <section style={card}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'flex-end' }}>
           <div style={{ display: 'grid', gap: '0.25rem' }}>
-            <label htmlFor="qfs-filter-status" style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)' }}>Status</label>
+            <label htmlFor="qfs-filter-status" style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)' }}>Status</label>
             <select id="qfs-filter-status" value={status} onChange={(event) => setStatus(event.target.value as QuoteStatus | '')}>
               <option value="">All ({Object.values(counts).reduce((sum, n) => sum + n, 0)})</option>
               {(Object.keys(STATUS_LABELS) as QuoteStatus[]).map((key) => (
@@ -109,7 +109,7 @@ export function QuotesScreen() {
             </select>
           </div>
           <div style={{ display: 'grid', gap: '0.25rem' }}>
-            <label htmlFor="qfs-filter-kind" style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)' }}>Kind</label>
+            <label htmlFor="qfs-filter-kind" style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)' }}>Kind</label>
             <select id="qfs-filter-kind" value={kind} onChange={(event) => setKind(event.target.value as QuoteKind | '')}>
               <option value="">Both</option>
               {(Object.keys(KIND_LABELS) as QuoteKind[]).map((key) => (
@@ -118,14 +118,14 @@ export function QuotesScreen() {
             </select>
           </div>
           <div style={{ display: 'grid', gap: '0.25rem', flex: '1 1 220px' }}>
-            <label htmlFor="qfs-filter-search" style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)' }}>Search</label>
+            <label htmlFor="qfs-filter-search" style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)' }}>Search</label>
             <input
               id="qfs-filter-search"
               value={search}
               placeholder="Number, code, name, email or company"
               onChange={(event) => setSearch(event.target.value)}
             />
-            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
               A code works with or without its dash.
             </span>
           </div>
@@ -142,7 +142,7 @@ export function QuotesScreen() {
         </h2>
 
         {!loading && quotes.length === 0 && (
-          <p style={{ color: 'var(--color-text-muted)', margin: 0 }}>
+          <p style={{ color: 'var(--color-text-secondary)', margin: 0 }}>
             Nothing here yet. Saved baskets and quote requests both land on this screen.
           </p>
         )}
@@ -153,7 +153,7 @@ export function QuotesScreen() {
               <thead>
                 <tr>
                   {['Quote', 'Customer', 'Kind', 'Items', 'Total', 'Status', 'Received'].map((heading) => (
-                    <th key={heading} style={{ textAlign: heading === 'Total' || heading === 'Items' ? 'right' : 'left', padding: '0.5rem 0.75rem 0.5rem 0', borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                    <th key={heading} style={{ textAlign: heading === 'Total' || heading === 'Items' ? 'right' : 'left', padding: '0.5rem 0.75rem 0.5rem 0', borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
                       {heading}
                     </th>
                   ))}
@@ -166,11 +166,11 @@ export function QuotesScreen() {
                       <a href={`/${adminPath}/m/quote-for-shop/quotes/${quote.id}`} style={{ fontWeight: 600 }}>
                         {quote.quoteNumber}
                       </a>
-                      <span style={{ display: 'block', color: 'var(--color-text-muted)', fontFamily: 'ui-monospace, monospace' }}>{quote.code}</span>
+                      <span style={{ display: 'block', color: 'var(--color-text-secondary)', fontFamily: 'ui-monospace, monospace' }}>{quote.code}</span>
                     </td>
                     <td style={{ padding: '0.5rem 0.75rem 0.5rem 0', borderBottom: '1px solid var(--color-border)' }}>
-                      {quote.customerName || quote.company || <span style={{ color: 'var(--color-text-muted)' }}>Not given</span>}
-                      {quote.customerEmail && <span style={{ display: 'block', color: 'var(--color-text-muted)' }}>{quote.customerEmail}</span>}
+                      {quote.customerName || quote.company || <span style={{ color: 'var(--color-text-secondary)' }}>Not given</span>}
+                      {quote.customerEmail && <span style={{ display: 'block', color: 'var(--color-text-secondary)' }}>{quote.customerEmail}</span>}
                     </td>
                     <td style={{ padding: '0.5rem 0.75rem 0.5rem 0', borderBottom: '1px solid var(--color-border)', whiteSpace: 'nowrap' }}>{KIND_LABELS[quote.kind]}</td>
                     <td style={{ padding: '0.5rem 0.75rem 0.5rem 0', borderBottom: '1px solid var(--color-border)', textAlign: 'right' }}>
@@ -180,12 +180,12 @@ export function QuotesScreen() {
                       {/* A quote taken while the shop was withholding prices has no
                           total worth printing until staff have priced it. */}
                       {quote.pricesHidden && quote.totals.total === 0
-                        ? <span style={{ color: 'var(--color-text-muted)' }}>To price</span>
+                        ? <span style={{ color: 'var(--color-text-secondary)' }}>To price</span>
                         : formatMoney(quote.totals.total, quote.currencySymbol)}
                     </td>
                     <td style={{ padding: '0.5rem 0.75rem 0.5rem 0', borderBottom: '1px solid var(--color-border)', whiteSpace: 'nowrap' }}>
                       {STATUS_LABELS[quote.status]}
-                      {quote.convertedOrderId && <span style={{ display: 'block', color: 'var(--color-text-muted)' }}>Ordered</span>}
+                      {quote.convertedOrderId && <span style={{ display: 'block', color: 'var(--color-text-secondary)' }}>Ordered</span>}
                     </td>
                     <td style={{ padding: '0.5rem 0.75rem 0.5rem 0', borderBottom: '1px solid var(--color-border)', whiteSpace: 'nowrap' }}>
                       {formatWhen(quote.createdAt)}
@@ -210,7 +210,7 @@ export function QuotesScreen() {
             >
               Previous
             </button>
-            <span style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+            <span style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
               Page {page} of {pageCount}
             </span>
             <button
