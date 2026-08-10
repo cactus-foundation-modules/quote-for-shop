@@ -1,13 +1,9 @@
-import { getSessionFromCookie } from '@/lib/auth/session'
-import { hasQuotePermission } from '@/modules/quote-for-shop/lib/access'
-import { QuotesScreen } from '@/modules/quote-for-shop/components/admin/QuotesScreen'
+import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 
-export const metadata = { title: 'Quotes — Admin' }
-
-export default async function QuotesAdminPage() {
-  const user = await getSessionFromCookie()
-  if (!user) return null
-  const canAccess = await hasQuotePermission(user, 'quotes.access', { allowAccess: true })
-  if (!canAccess) return <div className="alert alert-danger">You do not have permission to view quotes.</div>
-  return <QuotesScreen />
+// This screen is now a tab on Shop > Sales rather than a sidebar link of its own.
+// The route stays put so old bookmarks land on the tab instead of a 404.
+export default async function QuotesRedirect() {
+  const adminPath = (await headers()).get('x-cactus-admin-path') ?? 'cactus-admin'
+  return redirect(`/${adminPath}/m/shop/orders?tab=quotes`)
 }

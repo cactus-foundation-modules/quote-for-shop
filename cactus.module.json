@@ -1,9 +1,9 @@
 {
   "name": "quote-for-shop",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "tablePrefix": "qfs_",
   "description": "Quotes for the Shop: either turn the whole shop into a quote request flow (Add to quote, no checkout, prices optionally withheld), or leave ordinary checkout alone and let shoppers save a cart as a quote, retrieve it later with a short code, and download it as a PDF of a layout you design yourself.",
-  "requiresCoreVersion": "0.5.892",
+  "requiresCoreVersion": "0.5.1026",
   "publicBasePath": "quote",
   "requiresModules": [
     {
@@ -15,15 +15,6 @@
   "permissions": [
     "quotes.access",
     "quotes.manage"
-  ],
-  "navGroupLabel": "Shop",
-  "navEntries": [
-    {
-      "label": "Quotes",
-      "path": "/m/quote-for-shop/quotes",
-      "icon": "<path d=\"M8 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-2\"/><rect x=\"8\" y=\"2\" width=\"8\" height=\"4\" rx=\"1\"/><path d=\"M8 11h8M8 15h5\"/>",
-      "permission": "quotes.access"
-    }
   ],
   "cookieCategories": [],
   "emailTemplates": {
@@ -42,6 +33,15 @@
     }
   ],
   "extensionPoints": [
+    {
+      "point": "shop.orders-tabs",
+      "id": "quotes",
+      "label": "Quotes",
+      "order": 10,
+      "permission": "quotes.access",
+      "import": "./components/admin/QuotesTab",
+      "component": "QuotesTab"
+    },
     {
       "point": "shop.commerce-mode",
       "id": "quote-mode",
