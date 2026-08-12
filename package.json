@@ -1,6 +1,6 @@
 {
   "name": "cactus-module-quote-for-shop",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "Quotes for the Cactus shop: quote-only mode, save-cart-as-a-quote with a retrieval code, and a designable quote document you can download as a PDF",
   "license": "MIT",
   "private": true

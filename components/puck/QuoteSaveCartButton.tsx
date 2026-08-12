@@ -11,7 +11,7 @@ export function QuoteSaveCartButton(props: QuoteSaveCartButtonProps) {
   return (
     <SaveCartQuoteButton
       preview
-      label={props.label?.trim() || 'Save cart as a quote'}
+      label={props.label?.trim() || 'Save basket as a quote'}
       requireEmail={false}
       pdfEnabled
       pdfLabel="Download as PDF"

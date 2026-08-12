@@ -37,7 +37,7 @@ export const QfsConfigSchema = z.object({
   // Save-a-cart. `saveCartEnabled` is what the cart's own button is gated on, so
   // an owner running QUOTE_ONLY can still turn the parking feature off.
   saveCartEnabled: z.boolean().default(true),
-  saveCartLabel: z.string().default('Save cart as a quote'),
+  saveCartLabel: z.string().default('Save basket as a quote'),
   // Whether the save button appears on the basket's heading row by itself. Off is
   // for an owner who has placed the block somewhere they prefer - see
   // showRetrieveOnCart, which does the same job for the other control.

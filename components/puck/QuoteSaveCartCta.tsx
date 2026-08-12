@@ -15,7 +15,7 @@ export function QuoteSaveCartCta(props: QuoteSaveCartCtaProps) {
   return (
     <SaveCartQuoteCtaView
       preview
-      label={props.label?.trim() || 'Save cart as a quote'}
+      label={props.label?.trim() || 'Save basket as a quote'}
       blurb={props.blurb ?? ''}
       align={(props.align === 'centre' || props.align === 'right' ? props.align : 'left') as 'left' | 'centre' | 'right'}
       fullWidth={props.width !== 'auto'}
