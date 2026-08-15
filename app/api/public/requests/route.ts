@@ -28,6 +28,11 @@ const Body = z.object({
   phone: z.string().max(60).optional(),
   company: z.string().max(160).optional(),
   message: z.string().max(4000).optional(),
+  // The honeypot. Named `website` because that is what a form-stuffer expects
+  // to find and fill; a real shopper never sees the field. Optional, so a form
+  // posted by anything that never rendered it (an older cached page, a genuine
+  // API caller) is not punished for its absence - only for filling it in.
+  website: z.string().max(200).optional(),
 })
 
 export async function POST(request: NextRequest) {
@@ -44,6 +49,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: parsed.error?.issues[0]?.message ?? 'Please check the form and try again.' }, { status: 400 })
   }
   const data = parsed.data
+
+  // Anything in the honeypot means this was not a person. Answered with the
+  // same shape a success has, deliberately: telling a bot precisely which check
+  // it failed is free advice on how to pass next time, and no real shopper can
+  // ever reach this line. Nothing is written and nothing is emailed.
+  if (data.website && data.website.trim() !== '') {
+    return NextResponse.json({ ok: true })
+  }
 
   const config = await getQuoteConfigCached()
   const snapshot = await buildQuoteSnapshot(data.lines, { customerEmail: data.email })

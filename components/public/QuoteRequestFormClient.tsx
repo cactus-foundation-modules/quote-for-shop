@@ -39,6 +39,9 @@ export function QuoteRequestFormClient({
   const [phone, setPhone] = useState('')
   const [company, setCompany] = useState('')
   const [message, setMessage] = useState('')
+  // The honeypot's value. Never shown, never filled by a person - see the field
+  // itself further down. Posted as `website`, which the server refuses.
+  const [website, setWebsite] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState<Submitted | null>(null)
@@ -64,6 +67,7 @@ export function QuoteRequestFormClient({
           phone: phone.trim(),
           company: company.trim(),
           message: message.trim(),
+          website: website.trim(),
         }),
       })
       const data = await response.json()
@@ -140,6 +144,25 @@ export function QuoteRequestFormClient({
             <div className="qfs-field">
               <label htmlFor="qfs-req-message">Anything we should know? (optional)</label>
               <textarea id="qfs-req-message" rows={4} value={message} onChange={(event) => setMessage(event.target.value)} />
+            </div>
+            {/* The honeypot. A real shopper never sees it and never fills it in;
+                a form-stuffing bot fills every field it finds, which is the
+                whole tell. Hidden with an off-screen position rather than
+                display:none or hidden, because the cruder bots skip anything
+                obviously hidden - and tabIndex/aria-hidden/autoComplete keep it
+                away from keyboards, screen readers and password managers, all
+                of which WOULD otherwise reach it and fail an honest customer. */}
+            <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, overflow: 'hidden' }}>
+              <label htmlFor="qfs-req-website">Leave this blank</label>
+              <input
+                id="qfs-req-website"
+                name="website"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                value={website}
+                onChange={(event) => setWebsite(event.target.value)}
+              />
             </div>
             {error && <p className="qfs-error">{error}</p>}
             <button type="submit" className="qfs-btn qfs-btn-primary" disabled={!canSubmit}>
