@@ -1,6 +1,6 @@
 {
   "name": "quote-for-shop",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "tablePrefix": "qfs_",
   "description": "Quotes for the Shop: either turn the whole shop into a quote request flow (Add to quote, no checkout, prices optionally withheld), or leave ordinary checkout alone and let shoppers save a cart as a quote, retrieve it later with a short code, and download it as a PDF of a layout you design yourself.",
   "requiresCoreVersion": "0.5.1026",
@@ -59,6 +59,12 @@
       "id": "save-cart-quote",
       "import": "./components/public/SaveCartHeaderAction",
       "component": "SaveCartHeaderAction"
+    },
+    {
+      "point": "core.media-reference-rewriters",
+      "id": "quote-for-shop",
+      "import": "./lib/media-reference-rewriter",
+      "component": "quoteMediaReferenceRewriter"
     }
   ],
   "puckBlocks": [
