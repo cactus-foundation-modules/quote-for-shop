@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="module-art.webp" alt="Quote for Shop" width="640" />
+</p>
+
 # Quote for Shop
 
 Quotes for the Cactus Shop, in two flavours the site owner picks between:
