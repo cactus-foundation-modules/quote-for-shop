@@ -172,7 +172,7 @@ export const QUOTE_DOC_CSS = `
 .qfs-doc-footer .qfs-doc-small { margin: 0; font-size: 0.75rem; line-height: 1.6; color: var(--color-text-muted); }
 
 /* A rule of its own, for the gaps the blocks around it do not rule themselves. */
-.qfs-doc-rule { border: 0; border-top: 1px solid var(--color-border); }
+.qfs-doc-rule { border: 0; border-top: 1px solid var(--qfs-doc-rule-ink, var(--color-border)); }
 .qfs-doc-rule.qfs-doc-rule-short { max-width: 6rem; margin-right: auto; }
 .qfs-doc-rule.qfs-doc-rule-centre { max-width: 6rem; margin-left: auto; margin-right: auto; }
 
@@ -216,6 +216,9 @@ export const QUOTE_DOC_CSS = `
   .qfs-doc-head.qfs-doc-head-accent,
   .qfs-doc-totals.qfs-doc-total-accent .qfs-doc-grand,
   .qfs-doc-notice.qfs-doc-notice-panel, .qfs-doc-notice.qfs-doc-notice-outline { border-color: var(--qfs-doc-accent, #ccc) !important; }
+  /* After the grouped border reset above, so a divider given a colour of its
+     own keeps it on paper instead of being flattened to grey. */
+  .qfs-doc-rule { border-top-color: var(--qfs-doc-rule-ink, #ccc) !important; }
   .qfs-doc-lines { page-break-inside: auto; }
   .qfs-doc-lines tr { page-break-inside: avoid; page-break-after: auto; }
   .qfs-doc-totals, .qfs-doc-notes, .qfs-doc-notice, .qfs-doc-footer, .qfs-doc-parties { page-break-inside: avoid; }

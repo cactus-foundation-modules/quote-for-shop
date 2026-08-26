@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import {
   Style, FontLink, fontStyle, fontField, colourField, yesNo,
   fillTokens, quoteTokens, paragraphs, useCtx, TOKEN_HINT,
@@ -421,12 +422,15 @@ export function QuoteDocDivider(props: DividerProps) {
         className={`qfs-doc-rule${width}`}
         style={{
           borderTopWidth: RULE_WEIGHTS[props.weight ?? 'hairline'] ?? '1px',
-          // Left off entirely when blank, so the stylesheet's own token colour
-          // stands rather than being overridden with an empty string.
-          borderTopColor: colour || undefined,
           marginTop: SPACES[props.spaceAbove ?? 'medium'] ?? SPACES.medium,
           marginBottom: SPACES[props.spaceBelow ?? 'medium'] ?? SPACES.medium,
-        }}
+          // The colour goes on the custom property the stylesheet reads, NOT on
+          // border-top-color. The print rules say !important to force a dark-mode
+          // page back to ink on paper, and !important beats an inline
+          // declaration - so a coloured rule came out grey in the PDF, which is
+          // the one place the colour was the whole point.
+          ...(colour ? { '--qfs-doc-rule-ink': colour } : {}),
+        } as CSSProperties}
       />
     </>
   )
