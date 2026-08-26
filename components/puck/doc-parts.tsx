@@ -2,7 +2,7 @@ import { formatMoney } from '@/modules/shop/lib/money'
 import { sortLinesByGroup } from '@/modules/shop/lib/cart-group'
 import { restateDelivery } from '@/modules/quote-for-shop/lib/delivery-timing'
 import {
-  Style, FontLink, fontStyle, fontField, yesNo, formatDate, useCtx,
+  Style, FontLink, fontStyle, fontField, ptField, sizeVars, yesNo, formatDate, useCtx,
   type DocProps,
 } from '@/modules/quote-for-shop/components/puck/doc-shared'
 
@@ -27,14 +27,24 @@ import {
 // the old behaviour, never `=== 'yes'` for something that used to be on.
 
 // ---------------------------------------------------------------------------
-// Header: who is quoting, which quote this is, and when
+// Header: which quote this is, and when
 // ---------------------------------------------------------------------------
+//
+// The letterhead is NOT here. The picture at the top of the document is core's
+// own Site Logo block, dropped on the layout above this one, so it can be sized,
+// nudged and moved without going through a field on the heading - and so the
+// quote and the invoice it turns into draw the same logo the same way.
+//
+// A layout published before that change carries `showLogo` and `showName` props
+// this block no longer reads. They are ignored, which means the letterhead is
+// gone from that document until somebody adds the Site Logo block to it.
 
 type HeaderProps = DocProps & {
-  heading?: string; showLogo?: string; showName?: string; showCode?: string
-  titleSize?: string; logoSize?: string; sides?: string; rule?: string
+  heading?: string; showCode?: string
+  titleSize?: string; sides?: string; rule?: string
   factsLayout?: string; numberStyle?: string
   quoteLabel?: string; codeLabel?: string; dateLabel?: string; validLabel?: string
+  titlePt?: number; numberPt?: number; factsPt?: number; introPt?: number
 }
 
 const TITLE_SIZES: Record<string, string> = {
@@ -42,13 +52,6 @@ const TITLE_SIZES: Record<string, string> = {
   medium: '',
   large: ' qfs-doc-title-lg',
   display: ' qfs-doc-title-xl',
-}
-
-const LOGO_SIZES: Record<string, string> = {
-  small: ' qfs-doc-logo-sm',
-  medium: '',
-  large: ' qfs-doc-logo-lg',
-  huge: ' qfs-doc-logo-xl',
 }
 
 const HEAD_RULES: Record<string, string> = {
@@ -59,18 +62,14 @@ const HEAD_RULES: Record<string, string> = {
 
 export function QuoteDocHeader(props: HeaderProps) {
   const ctx = useCtx(props)
-  const { quote, site } = ctx
+  const { quote } = ctx
   const heading = props.heading?.trim() || ctx.copy.heading || 'Your quote'
   const font = fontStyle(props)
-  const showLogo = props.showLogo !== 'no' && Boolean(site.logoUrl)
-  // Plenty of logos have the shop's name drawn into them, and printing it again
-  // beside the picture just says everything twice - so 'auto' prints the name
-  // only where there is no logo to say it, and a shop with neither still gets a
-  // heading rather than an empty half of one. 'yes' and 'no' are honoured
-  // outright, which is what a layout saved before 'auto' existed carries.
-  const nameSetting = props.showName?.trim() || 'yes'
-  const nameWanted = nameSetting === 'yes' || (nameSetting !== 'no' && !showLogo)
-  const showName = nameWanted && Boolean(site.name)
+  const sizes = sizeVars({
+    '--qfs-doc-title-size': props.titlePt,
+    '--qfs-doc-lead-size': props.numberPt,
+    '--qfs-doc-facts-size': props.factsPt,
+  })
 
   const headClass = [
     'qfs-doc-head',
@@ -87,20 +86,7 @@ export function QuoteDocHeader(props: HeaderProps) {
     <>
       <Style />
       <FontLink family={props.fontFamily} />
-      <header className={headClass} style={font}>
-        {(showLogo || showName) && (
-          <div className="qfs-doc-brand">
-            {showLogo && (
-              // eslint-disable-next-line @next/next/no-img-element -- the PDF renderer loads this straight from the URL; next/image's optimiser adds nothing to a one-off print
-              <img
-                className={`qfs-doc-logo${LOGO_SIZES[props.logoSize ?? 'medium'] ?? ''}`}
-                src={site.logoUrl!}
-                alt={site.name}
-              />
-            )}
-            {showName && <span className="qfs-doc-site">{site.name}</span>}
-          </div>
-        )}
+      <header className={headClass} style={{ ...font, ...sizes }}>
         <div className="qfs-doc-meta">
           <h1 className={`qfs-doc-h1${TITLE_SIZES[props.titleSize ?? 'medium'] ?? ''}`} style={font}>{heading}</h1>
           {leadNumber && quote.quoteNumber && <p className="qfs-doc-lead">{quote.quoteNumber}</p>}
@@ -128,7 +114,14 @@ export function QuoteDocHeader(props: HeaderProps) {
           </dl>
         </div>
       </header>
-      {ctx.copy.intro && <p className="qfs-doc-intro" style={font}>{ctx.copy.intro}</p>}
+      {/* A sibling of the header rather than a child of it, so it carries its
+          own size property - a custom property reaches its own subtree and
+          nothing else. */}
+      {ctx.copy.intro && (
+        <p className="qfs-doc-intro" style={{ ...font, ...sizeVars({ '--qfs-doc-intro-size': props.introPt }) }}>
+          {ctx.copy.intro}
+        </p>
+      )}
     </>
   )
 }
@@ -144,26 +137,17 @@ export const quoteDocHeaderPuckComponent = {
       { value: 'large', label: 'Large' },
       { value: 'display', label: 'Very large' },
     ] },
-    sides: { type: 'select' as const, label: 'Which way round', options: [
-      { value: 'logo-left', label: 'Logo left, heading right' },
-      { value: 'title-left', label: 'Heading left, logo right' },
+    titlePt: ptField('Heading size in points (overrides the box above)'),
+    sides: { type: 'select' as const, label: 'The heading sits', options: [
+      // Values kept as they were: a layout saved when this also flipped the logo
+      // keeps the side it was set to, without a data migration.
+      { value: 'logo-left', label: 'At the right' },
+      { value: 'title-left', label: 'At the left' },
     ] },
     rule: { type: 'select' as const, label: 'Rule underneath', options: [
       { value: 'hairline', label: 'Hairline' },
       { value: 'accent', label: 'Thick, in the accent colour' },
       { value: 'none', label: 'None' },
-    ] },
-    showLogo: { type: 'select' as const, label: 'Site logo', options: yesNo },
-    logoSize: { type: 'select' as const, label: 'Logo size', options: [
-      { value: 'small', label: 'Small' },
-      { value: 'medium', label: 'Medium' },
-      { value: 'large', label: 'Large' },
-      { value: 'huge', label: 'Very large' },
-    ] },
-    showName: { type: 'select' as const, label: 'Shop name in words', options: [
-      { value: 'auto', label: 'Only when there is no logo' },
-      { value: 'yes', label: 'Always' },
-      { value: 'no', label: 'Never' },
     ] },
     factsLayout: { type: 'select' as const, label: 'Dates and numbers', options: [
       { value: 'columns', label: 'Labels and values in two columns' },
@@ -178,10 +162,14 @@ export const quoteDocHeaderPuckComponent = {
     codeLabel: { type: 'text' as const, label: '"Code" row label' },
     dateLabel: { type: 'text' as const, label: '"Date" row label' },
     validLabel: { type: 'text' as const, label: '"Valid until" row label' },
+    numberPt: ptField('Quote number size in points'),
+    factsPt: ptField('Dates and numbers size in points'),
+    introPt: ptField('Opening line size in points'),
   },
+  // No defaults for the point sizes on purpose: blank is "leave it as it is",
+  // and a default would set every document's sizes the moment the field shipped.
   defaultProps: {
     heading: '', fontFamily: '', titleSize: 'medium', sides: 'logo-left', rule: 'hairline',
-    showLogo: 'yes', logoSize: 'medium', showName: 'yes',
     factsLayout: 'columns', numberStyle: 'row',
     quoteLabel: 'Quote', showCode: 'yes', codeLabel: 'Code',
     dateLabel: 'Date', validLabel: 'Valid until',
@@ -199,7 +187,10 @@ export const quoteDocHeaderPuckRscComponent = { ...quoteDocHeaderPuckComponent, 
 // instead; this one stays exactly as it was for every document already published
 // against it.
 
-type CustomerProps = DocProps & { label?: string; showMessage?: string; capsHeading?: string }
+type CustomerProps = DocProps & {
+  label?: string; showMessage?: string; capsHeading?: string
+  headingPt?: number; namePt?: number; messagePt?: number
+}
 
 export function QuoteDocCustomer(props: CustomerProps) {
   const { quote } = useCtx(props)
@@ -213,7 +204,17 @@ export function QuoteDocCustomer(props: CustomerProps) {
     <>
       <Style />
       <FontLink family={props.fontFamily} />
-      <section className="qfs-doc-for" style={font}>
+      <section
+        className="qfs-doc-for"
+        style={{
+          ...font,
+          ...sizeVars({
+            '--qfs-doc-h2-size': props.headingPt,
+            '--qfs-doc-who-size': props.namePt,
+            '--qfs-doc-message-size': props.messagePt,
+          }),
+        }}
+      >
         {who.length > 0 && (
           <>
             <h2 className={`qfs-doc-h2${caps}`} style={font}>{props.label?.trim() || 'Prepared for'}</h2>
@@ -235,6 +236,9 @@ export const quoteDocCustomerPuckComponent = {
     capsHeading: { type: 'select' as const, label: 'Heading in small capitals', options: yesNo },
     fontFamily: fontField,
     showMessage: { type: 'select' as const, label: 'What the customer wrote', options: yesNo },
+    headingPt: ptField('Heading size in points'),
+    namePt: ptField('Name size in points'),
+    messagePt: ptField('Size in points of what the customer wrote'),
   },
   defaultProps: { label: 'Prepared for', capsHeading: 'no', fontFamily: '', showMessage: 'yes' },
   render: QuoteDocCustomer,
@@ -250,6 +254,7 @@ type LinesProps = DocProps & {
   deliveryTiming?: string; leadTimeSuffix?: string
   itemLabel?: string; qtyLabel?: string; priceLabel?: string; totalLabel?: string
   headStyle?: string; rowRules?: string; zebra?: string
+  headPt?: number; rowPt?: number; skuPt?: number; detailPt?: number; poaPt?: number
 }
 
 const imageSizes = [
@@ -288,7 +293,18 @@ export function QuoteDocLines(props: LinesProps) {
     <>
       <Style />
       <FontLink family={props.fontFamily} />
-      <table className={table} style={font}>
+      <table
+        className={table}
+        style={{
+          ...font,
+          ...sizeVars({
+            '--qfs-doc-thead-size': props.headPt,
+            '--qfs-doc-row-size': props.rowPt,
+            '--qfs-doc-sku-size': props.skuPt,
+            '--qfs-doc-detail-size': props.detailPt,
+          }),
+        }}
+      >
         <thead>
           <tr>
             {showImages && <th className="qfs-doc-imgcol" aria-hidden="true" />}
@@ -344,7 +360,9 @@ export function QuoteDocLines(props: LinesProps) {
         </tbody>
       </table>
       {!showMoney && (
-        <p className="qfs-doc-poa" style={font}>We will price this list and come back to you.</p>
+        <p className="qfs-doc-poa" style={{ ...font, ...sizeVars({ '--qfs-doc-poa-size': props.poaPt }) }}>
+          We will price this list and come back to you.
+        </p>
       )}
     </>
   )
@@ -372,6 +390,11 @@ export const quoteDocLinesPuckComponent = {
     qtyLabel: { type: 'text' as const, label: 'Quantity column' },
     priceLabel: { type: 'text' as const, label: 'Unit price column' },
     totalLabel: { type: 'text' as const, label: 'Line total column' },
+    headPt: ptField('Column heading size in points'),
+    rowPt: ptField('Item row size in points'),
+    skuPt: ptField('Product code size in points'),
+    detailPt: ptField('Options and delivery detail size in points'),
+    poaPt: ptField('Size in points of the line where prices are withheld'),
   },
   defaultProps: {
     fontFamily: '', headStyle: 'rule', rowRules: 'every', zebra: 'no',
@@ -391,6 +414,7 @@ type TotalsProps = DocProps & {
   subtotalLabel?: string; taxLabel?: string; totalLabel?: string; note?: string
   emphasis?: string; width?: string; taxRatePercent?: string
   deliveryLabel?: string; showDeliveryRow?: string; zeroDelivery?: string
+  rowPt?: number; totalPt?: number; notePt?: number
 }
 
 const TOTALS_WIDTHS: Record<string, string> = { narrow: '18rem', normal: '22rem', wide: '28rem' }
@@ -425,7 +449,14 @@ export function QuoteDocTotals(props: TotalsProps) {
     <>
       <Style />
       <FontLink family={props.fontFamily} />
-      <dl className={listClass} style={{ ...font, maxWidth: TOTALS_WIDTHS[props.width ?? 'normal'] }}>
+      <dl
+        className={listClass}
+        style={{
+          ...font,
+          maxWidth: TOTALS_WIDTHS[props.width ?? 'normal'],
+          ...sizeVars({ '--qfs-doc-totals-size': props.rowPt, '--qfs-doc-grand-size': props.totalPt }),
+        }}
+      >
         <dt>{props.subtotalLabel?.trim() || 'Subtotal'}</dt>
         <dd>{formatMoney(totals.subtotal, quote.currencySymbol)}</dd>
         {/* Named charges a cart-line resolver broke out of the line prices (a
@@ -459,7 +490,11 @@ export function QuoteDocTotals(props: TotalsProps) {
       </dl>
       {/* Delivery is the one figure a quote genuinely cannot know: it depends on
           an address nobody has given yet. Saying so beats printing a zero. */}
-      {note && <p className="qfs-doc-note" style={font}>{note}</p>}
+      {note && (
+        <p className="qfs-doc-note" style={{ ...font, ...sizeVars({ '--qfs-doc-note-size': props.notePt }) }}>
+          {note}
+        </p>
+      )}
     </>
   )
 }
@@ -488,6 +523,9 @@ export const quoteDocTotalsPuckComponent = {
     taxRatePercent: { type: 'text' as const, label: 'Tax rate to print in that row, e.g. "20" (blank prints none)' },
     totalLabel: { type: 'text' as const, label: 'Total row' },
     note: { type: 'textarea' as const, label: 'Delivery note under the totals (blank prints nothing)' },
+    rowPt: ptField('Row size in points'),
+    totalPt: ptField('Total size in points'),
+    notePt: ptField('Delivery note size in points'),
   },
   defaultProps: {
     fontFamily: '', emphasis: 'rule', width: 'normal',
@@ -507,6 +545,7 @@ type NotesProps = DocProps & {
   showReply?: string; showValidity?: string; showTerms?: string; termsHeading?: string
   columns?: string; capsHeadings?: string
   showDelivery?: string; deliveryHeading?: string; deliveryText?: string
+  headingPt?: number; replyPt?: number; validityPt?: number; smallPrintPt?: number
 }
 
 export function QuoteDocNotes(props: NotesProps) {
@@ -530,7 +569,18 @@ export function QuoteDocNotes(props: NotesProps) {
     <>
       <Style />
       <FontLink family={props.fontFamily} />
-      <section className={`qfs-doc-notes${cols}`} style={font}>
+      <section
+        className={`qfs-doc-notes${cols}`}
+        style={{
+          ...font,
+          ...sizeVars({
+            '--qfs-doc-h2-size': props.headingPt,
+            '--qfs-doc-reply-size': props.replyPt,
+            '--qfs-doc-validity-size': props.validityPt,
+            '--qfs-doc-smallprint-size': props.smallPrintPt,
+          }),
+        }}
+      >
         {showReply && <p className="qfs-doc-reply">{quote.reply}</p>}
         {showValidity && <p className="qfs-doc-validity">{copy.validity}</p>}
         {showDelivery && (
@@ -568,6 +618,10 @@ export const quoteDocNotesPuckComponent = {
     deliveryText: { type: 'textarea' as const, label: 'What the delivery column says, on this layout only' },
     showTerms: { type: 'select' as const, label: 'Terms', options: yesNo },
     termsHeading: { type: 'text' as const, label: 'Terms heading' },
+    headingPt: ptField('Heading size in points'),
+    replyPt: ptField('Size in points of your reply'),
+    validityPt: ptField('Size in points of how long the quote stands'),
+    smallPrintPt: ptField('Terms and delivery size in points'),
   },
   defaultProps: {
     fontFamily: '', columns: '1', capsHeadings: 'no',

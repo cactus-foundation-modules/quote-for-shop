@@ -41,29 +41,23 @@ export const QUOTE_DOC_CSS = `
 /* The rule under the heading, as three looks rather than three fields. */
 .qfs-doc-head.qfs-doc-head-accent { padding-bottom: 1.25rem; border-bottom: var(--qfs-doc-rule-w, 3px) solid var(--qfs-doc-accent, var(--color-border)); }
 .qfs-doc-head.qfs-doc-head-flat { padding-bottom: 0.5rem; border-bottom: 0; }
-/* Brand and meta sit in source order by default. 'Heading on the left' flips
-   them without touching the markup, so the RSC path and the editor cannot
-   disagree about what the document is. */
+/* Which side the heading sits on. The letterhead is a Site Logo block of its
+   own now, so this only moves the heading and its dates - but it stays a class
+   on the same markup, so the RSC path and the editor cannot disagree, and a
+   layout saved when this also flipped a logo keeps the side it was set to. */
 .qfs-doc-head.qfs-doc-swap { flex-direction: row-reverse; }
 .qfs-doc-head.qfs-doc-swap .qfs-doc-meta { text-align: left; margin-left: 0; margin-right: auto; }
 .qfs-doc-head.qfs-doc-swap .qfs-doc-facts { justify-content: start; }
-.qfs-doc-head.qfs-doc-swap .qfs-doc-brand { margin-left: auto; }
-.qfs-doc-brand { display: flex; align-items: center; gap: 0.75rem; }
-.qfs-doc-logo { max-height: 48px; max-width: 200px; width: auto; height: auto; }
-.qfs-doc-logo-sm { max-height: 34px; max-width: 150px; }
-.qfs-doc-logo-lg { max-height: 72px; max-width: 280px; }
-.qfs-doc-logo-xl { max-height: 96px; max-width: 360px; }
-.qfs-doc-site { font-weight: 600; font-size: 1.0625rem; color: var(--color-text); }
 .qfs-doc-meta { text-align: right; margin-left: auto; }
-.qfs-doc-h1 { font-size: 1.5rem; line-height: 1.1; margin: 0 0 0.5rem; color: var(--qfs-doc-title-ink, var(--color-text)); }
-.qfs-doc-h1.qfs-doc-title-sm { font-size: 1.25rem; }
-.qfs-doc-h1.qfs-doc-title-lg { font-size: 2rem; }
-.qfs-doc-h1.qfs-doc-title-xl { font-size: 2.75rem; }
-.qfs-doc-h2 { font-size: 0.9375rem; margin: 0 0 0.375rem; color: var(--qfs-doc-label, var(--color-text)); }
+.qfs-doc-h1 { font-size: var(--qfs-doc-title-size, 1.5rem); line-height: 1.1; margin: 0 0 0.5rem; color: var(--qfs-doc-title-ink, var(--color-text)); }
+.qfs-doc-h1.qfs-doc-title-sm { font-size: var(--qfs-doc-title-size, 1.25rem); }
+.qfs-doc-h1.qfs-doc-title-lg { font-size: var(--qfs-doc-title-size, 2rem); }
+.qfs-doc-h1.qfs-doc-title-xl { font-size: var(--qfs-doc-title-size, 2.75rem); }
+.qfs-doc-h2 { font-size: var(--qfs-doc-h2-size, 0.9375rem); margin: 0 0 0.375rem; color: var(--qfs-doc-label, var(--color-text)); }
 /* Small caps, for a document whose section headings are labels rather than
    titles - which is what they are once the quote number leads the page. */
-.qfs-doc-h2.qfs-doc-h2-caps { font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--qfs-doc-label, var(--color-text-muted)); }
-.qfs-doc-facts { display: grid; grid-template-columns: auto auto; gap: 0.125rem 0.75rem; margin: 0; font-size: 0.875rem; justify-content: end; }
+.qfs-doc-h2.qfs-doc-h2-caps { font-size: var(--qfs-doc-h2-size, 0.8125rem); text-transform: uppercase; letter-spacing: 0.04em; color: var(--qfs-doc-label, var(--color-text-muted)); }
+.qfs-doc-facts { display: grid; grid-template-columns: auto auto; gap: 0.125rem 0.75rem; margin: 0; font-size: var(--qfs-doc-facts-size, 0.875rem); justify-content: end; }
 .qfs-doc-facts dt { color: var(--color-text-muted); }
 .qfs-doc-facts dd { margin: 0; color: var(--color-text); font-variant-numeric: tabular-nums; }
 /* Stacked facts read "Issued 6 April 2026" on one line instead of ruling the
@@ -76,24 +70,24 @@ export const QUOTE_DOC_CSS = `
 .qfs-doc-facts.qfs-doc-facts-stack dt::after { content: ' '; white-space: pre; }
 .qfs-doc-facts.qfs-doc-facts-stack dd::after { content: ''; display: block; }
 /* The quote's own number, printed above the dates with no label. */
-.qfs-doc-lead { margin: 0 0 0.375rem; font-weight: 700; font-size: 1rem; color: var(--qfs-doc-title-ink, var(--color-text)); font-variant-numeric: tabular-nums; }
-.qfs-doc-intro { margin: 1rem 0 0; color: var(--color-text); }
+.qfs-doc-lead { margin: 0 0 0.375rem; font-weight: 700; font-size: var(--qfs-doc-lead-size, 1rem); color: var(--qfs-doc-title-ink, var(--color-text)); font-variant-numeric: tabular-nums; }
+.qfs-doc-intro { margin: 1rem 0 0; font-size: var(--qfs-doc-intro-size, inherit); color: var(--color-text); }
 
 .qfs-doc-for { margin: var(--qfs-doc-gap, 1.5rem) 0 0; }
-.qfs-doc-who { margin: 0; display: flex; flex-direction: column; color: var(--color-text); }
-.qfs-doc-quote { margin: 0.75rem 0 0; padding: 0 0 0 0.875rem; border-left: 3px solid var(--color-border); color: var(--color-text-muted); font-style: italic; }
+.qfs-doc-who { margin: 0; display: flex; flex-direction: column; font-size: var(--qfs-doc-who-size, inherit); color: var(--color-text); }
+.qfs-doc-quote { margin: 0.75rem 0 0; padding: 0 0 0 0.875rem; border-left: 3px solid var(--color-border); font-size: var(--qfs-doc-message-size, inherit); color: var(--color-text-muted); font-style: italic; }
 
 /* Who it is between - the block a quote never had. The seller's own details on
    one side and the customer's on the other, which is how the invoice this quote
    turns into is already set. */
 .qfs-doc-parties { margin: var(--qfs-doc-gap, 1.5rem) 0 0; display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
 .qfs-doc-parties.qfs-doc-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.qfs-doc-party address { font-style: normal; display: grid; gap: 0.125rem; color: var(--color-text); font-size: 0.9375rem; }
+.qfs-doc-party address { font-style: normal; display: grid; gap: 0.125rem; color: var(--color-text); font-size: var(--qfs-doc-party-size, 0.9375rem); }
 .qfs-doc-party .qfs-doc-strong { font-weight: 600; }
-.qfs-doc-reg { margin: 0.5rem 0 0; display: grid; gap: 0.125rem; font-size: 0.8125rem; color: var(--color-text-muted); }
+.qfs-doc-reg { margin: 0.5rem 0 0; display: grid; gap: 0.125rem; font-size: var(--qfs-doc-reg-size, 0.8125rem); color: var(--color-text-muted); }
 
-.qfs-doc-lines { width: 100%; border-collapse: collapse; margin: var(--qfs-doc-gap, 1.5rem) 0 0; font-size: 0.9375rem; }
-.qfs-doc-lines th { text-align: left; padding: 0.5rem 0.5rem 0.5rem 0; border-bottom: 1px solid var(--color-border); color: var(--qfs-doc-thead-ink, var(--color-text-muted)); font-weight: 600; font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.02em; }
+.qfs-doc-lines { width: 100%; border-collapse: collapse; margin: var(--qfs-doc-gap, 1.5rem) 0 0; font-size: var(--qfs-doc-row-size, 0.9375rem); }
+.qfs-doc-lines th { text-align: left; padding: 0.5rem 0.5rem 0.5rem 0; border-bottom: 1px solid var(--color-border); color: var(--qfs-doc-thead-ink, var(--color-text-muted)); font-weight: 600; font-size: var(--qfs-doc-thead-size, 0.8125rem); text-transform: uppercase; letter-spacing: 0.02em; }
 .qfs-doc-lines td { padding: var(--qfs-doc-row-y, 0.625rem) 0.5rem var(--qfs-doc-row-y, 0.625rem) 0; border-bottom: 1px solid var(--color-border-subtle, var(--color-border)); vertical-align: top; color: var(--color-text); }
 .qfs-doc-lines th:last-child, .qfs-doc-lines td:last-child { padding-right: 0; }
 /* A banded head. The fill needs padding inside the cells to sit in, which the
@@ -118,17 +112,17 @@ export const QUOTE_DOC_CSS = `
 .qfs-doc-lines.qfs-img-lg .qfs-doc-imgcol { width: 104px; }
 .qfs-doc-lines.qfs-img-lg .qfs-doc-thumb { width: 96px; height: 96px; }
 .qfs-doc-name { display: block; font-weight: 500; }
-.qfs-doc-sku { display: block; font-size: 0.8125rem; color: var(--color-text-muted); }
-.qfs-doc-detail { list-style: none; margin: 0.25rem 0 0; padding: 0; display: grid; gap: 0.125rem; font-size: 0.8125rem; color: var(--color-text-muted); }
+.qfs-doc-sku { display: block; font-size: var(--qfs-doc-sku-size, 0.8125rem); color: var(--color-text-muted); }
+.qfs-doc-detail { list-style: none; margin: 0.25rem 0 0; padding: 0; display: grid; gap: 0.125rem; font-size: var(--qfs-doc-detail-size, 0.8125rem); color: var(--color-text-muted); }
 .qfs-doc-detail span { font-weight: 500; }
 .qfs-doc-empty { color: var(--color-text-muted); padding: 1.25rem 0; }
-.qfs-doc-poa { margin: 0.75rem 0 0; color: var(--color-text-muted); font-size: 0.9375rem; }
+.qfs-doc-poa { margin: 0.75rem 0 0; color: var(--color-text-muted); font-size: var(--qfs-doc-poa-size, 0.9375rem); }
 
-.qfs-doc-totals { display: grid; grid-template-columns: 1fr auto; gap: 0.25rem 1.5rem; margin: 1.25rem 0 0; margin-left: auto; max-width: 22rem; font-size: 0.9375rem; }
+.qfs-doc-totals { display: grid; grid-template-columns: 1fr auto; gap: 0.25rem 1.5rem; margin: 1.25rem 0 0; margin-left: auto; max-width: 22rem; font-size: var(--qfs-doc-totals-size, 0.9375rem); }
 .qfs-doc-totals dt { color: var(--color-text-muted); }
 .qfs-doc-totals dd { margin: 0; text-align: right; color: var(--color-text); font-variant-numeric: tabular-nums; }
 .qfs-doc-row { display: contents; }
-.qfs-doc-grand { font-weight: 700; font-size: 1.0625rem; color: var(--color-text); padding-top: 0.375rem; border-top: 1px solid var(--color-border); }
+.qfs-doc-grand { font-weight: 700; font-size: var(--qfs-doc-grand-size, 1.0625rem); color: var(--color-text); padding-top: 0.375rem; border-top: 1px solid var(--color-border); }
 /* The total given the weight of a total: a rule in the document's accent above
    it, and the heading face at a size that ends the page.
    The rule is drawn on the label and on the figure, so the column gap would
@@ -137,28 +131,28 @@ export const QUOTE_DOC_CSS = `
 .qfs-doc-totals.qfs-doc-total-accent { column-gap: 0; }
 .qfs-doc-totals.qfs-doc-total-accent dd { padding-left: 1.5rem; }
 .qfs-doc-totals.qfs-doc-total-accent .qfs-doc-grand { font-family: var(--qfs-doc-head-font, var(--h1-family, var(--font-heading, var(--font-body, inherit)))); font-size: var(--qfs-doc-grand-size, 1.5rem); padding-top: 0.75rem; margin-top: 0.375rem; border-top: var(--qfs-doc-rule-w, 2px) solid var(--qfs-doc-accent, var(--color-border)); color: var(--qfs-doc-title-ink, var(--color-text)); }
-.qfs-doc-note { margin: 0.625rem 0 0; text-align: right; font-size: 0.8125rem; color: var(--color-text-muted); }
+.qfs-doc-note { margin: 0.625rem 0 0; text-align: right; font-size: var(--qfs-doc-note-size, 0.8125rem); color: var(--color-text-muted); }
 
 .qfs-doc-notes { margin: var(--qfs-doc-gap-lg, 1.75rem) 0 0; display: grid; gap: 0.75rem; }
 /* Two columns, for a document whose delivery wording and terms are each short
    enough to sit beside one another rather than under. */
 .qfs-doc-notes.qfs-doc-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; align-items: start; }
-.qfs-doc-reply { margin: 0; color: var(--color-text); }
-.qfs-doc-validity { margin: 0; font-size: 0.875rem; color: var(--color-text-muted); }
-.qfs-doc-terms p { margin: 0 0 0.5rem; font-size: 0.8125rem; color: var(--color-text-muted); }
-.qfs-doc-delivery p { margin: 0 0 0.5rem; font-size: 0.8125rem; color: var(--color-text-muted); }
+.qfs-doc-reply { margin: 0; font-size: var(--qfs-doc-reply-size, inherit); color: var(--color-text); }
+.qfs-doc-validity { margin: 0; font-size: var(--qfs-doc-validity-size, 0.875rem); color: var(--color-text-muted); }
+.qfs-doc-terms p { margin: 0 0 0.5rem; font-size: var(--qfs-doc-smallprint-size, 0.8125rem); color: var(--color-text-muted); }
+.qfs-doc-delivery p { margin: 0 0 0.5rem; font-size: var(--qfs-doc-smallprint-size, 0.8125rem); color: var(--color-text-muted); }
 
 /* ---------------------------------------------------------------------------
    Notice panel - the sentence a quote says before it says any numbers: how long
    the price holds, and what to do about it.
    --------------------------------------------------------------------------- */
-.qfs-doc-notice { margin: var(--qfs-doc-gap, 1.5rem) 0 0; font-size: 0.9375rem; line-height: 1.55; color: var(--qfs-doc-panel-ink, var(--color-text)); }
+.qfs-doc-notice { margin: var(--qfs-doc-gap, 1.5rem) 0 0; font-size: var(--qfs-doc-notice-size, 0.9375rem); line-height: 1.55; color: var(--qfs-doc-panel-ink, var(--color-text)); }
 .qfs-doc-notice p { margin: 0 0 0.5rem; }
 .qfs-doc-notice p:last-child { margin-bottom: 0; }
 .qfs-doc-notice .qfs-doc-notice-lead { font-weight: 700; }
 .qfs-doc-notice.qfs-doc-notice-panel { padding: 0.875rem 1.125rem; background: var(--qfs-doc-panel-bg, var(--color-bg-subtle)); border-left: var(--qfs-doc-rule-w, 3px) solid var(--qfs-doc-accent, var(--color-border)); border-radius: 0 var(--qfs-doc-radius, 0) var(--qfs-doc-radius, 0) 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .qfs-doc-notice.qfs-doc-notice-outline { padding: 0.875rem 1.125rem; border: 1px solid var(--qfs-doc-accent, var(--color-border)); border-radius: var(--qfs-doc-radius, 0); }
-.qfs-doc-notice.qfs-doc-notice-quiet { padding: 0; color: var(--color-text-muted); font-size: 0.875rem; }
+.qfs-doc-notice.qfs-doc-notice-quiet { padding: 0; color: var(--color-text-muted); font-size: var(--qfs-doc-notice-size, 0.875rem); }
 
 /* ---------------------------------------------------------------------------
    Footer - where to find the shop, and the registration details a limited
@@ -168,8 +162,8 @@ export const QUOTE_DOC_CSS = `
 .qfs-doc-footer.qfs-doc-footer-bare { border-top: 0; padding-top: 0; }
 .qfs-doc-footer.qfs-doc-align-left { text-align: left; }
 .qfs-doc-footer.qfs-doc-align-right { text-align: right; }
-.qfs-doc-footer .qfs-doc-contact { margin: 0 0 0.5rem; font-size: 0.875rem; font-weight: 700; color: var(--qfs-doc-accent, var(--color-text)); }
-.qfs-doc-footer .qfs-doc-small { margin: 0; font-size: 0.75rem; line-height: 1.6; color: var(--color-text-muted); }
+.qfs-doc-footer .qfs-doc-contact { margin: 0 0 0.5rem; font-size: var(--qfs-doc-footer-contact-size, 0.875rem); font-weight: 700; color: var(--qfs-doc-accent, var(--color-text)); }
+.qfs-doc-footer .qfs-doc-small { margin: 0; font-size: var(--qfs-doc-footer-small-size, 0.75rem); line-height: 1.6; color: var(--color-text-muted); }
 
 /* A rule of its own, for the gaps the blocks around it do not rule themselves. */
 .qfs-doc-rule { border: 0; border-top: 1px solid var(--qfs-doc-rule-ink, var(--color-border)); }
@@ -197,7 +191,7 @@ export const QUOTE_DOC_CSS = `
 @media print {
   .qfs-doc-head, .qfs-doc-for, .qfs-doc-lines, .qfs-doc-totals, .qfs-doc-notes,
   .qfs-doc-parties, .qfs-doc-notice, .qfs-doc-footer { color: #111 !important; }
-  .qfs-doc-site, .qfs-doc-name, .qfs-doc-grand, .qfs-doc-reply, .qfs-doc-strong,
+  .qfs-doc-name, .qfs-doc-grand, .qfs-doc-reply, .qfs-doc-strong,
   .qfs-doc-facts dd, .qfs-doc-lines td, .qfs-doc-who, .qfs-doc-totals dd { color: #111 !important; }
   .qfs-doc-facts dt, .qfs-doc-sku, .qfs-doc-detail, .qfs-doc-empty, .qfs-doc-note, .qfs-doc-reg,
   .qfs-doc-validity, .qfs-doc-terms p, .qfs-doc-delivery p, .qfs-doc-quote, .qfs-doc-poa,

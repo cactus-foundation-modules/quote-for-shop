@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import {
-  Style, FontLink, fontStyle, fontField, colourField, yesNo,
+  Style, FontLink, fontStyle, fontField, ptField, sizeVars, colourField, yesNo,
   fillTokens, quoteTokens, paragraphs, useCtx, TOKEN_HINT,
   type DocProps,
 } from '@/modules/quote-for-shop/components/puck/doc-shared'
@@ -178,6 +178,7 @@ type PartiesProps = DocProps & {
   toLabel?: string; fromLabel?: string
   showFrom?: string; showTo?: string; showRegistration?: string
   order?: string; columns?: string; showMessage?: string
+  headingPt?: number; addressPt?: number; registrationPt?: number; messagePt?: number
 }
 
 export function QuoteDocParties(props: PartiesProps) {
@@ -217,8 +218,19 @@ export function QuoteDocParties(props: PartiesProps) {
     </div>
   ) : null
 
+  // A sibling of the two columns rather than a child of either, so it carries
+  // its own size property - a custom property reaches its own subtree and
+  // nothing else.
   const message = props.showMessage === 'yes' && quote.message
-    ? <blockquote className="qfs-doc-quote" key="msg">{quote.message}</blockquote>
+    ? (
+      <blockquote
+        className="qfs-doc-quote"
+        key="msg"
+        style={{ ...font, ...sizeVars({ '--qfs-doc-message-size': props.messagePt }) }}
+      >
+        {quote.message}
+      </blockquote>
+    )
     : null
 
   // A block with nothing in it should take up no room on the page. A saved
@@ -231,7 +243,17 @@ export function QuoteDocParties(props: PartiesProps) {
     <>
       <Style />
       <FontLink family={props.fontFamily} />
-      <section className={`qfs-doc-parties${width}`} style={font}>
+      <section
+        className={`qfs-doc-parties${width}`}
+        style={{
+          ...font,
+          ...sizeVars({
+            '--qfs-doc-h2-size': props.headingPt,
+            '--qfs-doc-party-size': props.addressPt,
+            '--qfs-doc-reg-size': props.registrationPt,
+          }),
+        }}
+      >
         {columns.filter(Boolean)}
       </section>
       {message}
@@ -257,6 +279,10 @@ export const quoteDocPartiesPuckComponent = {
     fromLabel: { type: 'text' as const, label: '"From" heading' },
     showRegistration: { type: 'select' as const, label: 'VAT and company numbers', options: yesNo },
     showMessage: { type: 'select' as const, label: 'What the customer wrote', options: yesNo },
+    headingPt: ptField('Heading size in points'),
+    addressPt: ptField('Address size in points'),
+    registrationPt: ptField('VAT and company number size in points'),
+    messagePt: ptField('Size in points of what the customer wrote'),
   },
   defaultProps: {
     fontFamily: '', order: 'to-first', columns: '2',
@@ -278,7 +304,10 @@ const NOTICE_STYLES = [
   { value: 'quiet', label: 'Small print' },
 ]
 
-type NoticeProps = DocProps & { lead?: string; body?: string; panelStyle?: string; hideWhenEmpty?: string }
+type NoticeProps = DocProps & {
+  lead?: string; body?: string; panelStyle?: string; hideWhenEmpty?: string
+  bodyPt?: number
+}
 
 export function QuoteDocNotice(props: NoticeProps) {
   const ctx = useCtx(props)
@@ -296,7 +325,10 @@ export function QuoteDocNotice(props: NoticeProps) {
     <>
       <Style />
       <FontLink family={props.fontFamily} />
-      <section className={`qfs-doc-notice qfs-doc-notice-${variant}`} style={font}>
+      <section
+        className={`qfs-doc-notice qfs-doc-notice-${variant}`}
+        style={{ ...font, ...sizeVars({ '--qfs-doc-notice-size': props.bodyPt }) }}
+      >
         {/* The lead runs into the first paragraph rather than sitting above it -
             "This quote holds until 6 May. Prices are the same ones on the site."
             is one sentence with a bold opening, not a heading and a body. */}
@@ -326,6 +358,7 @@ export const quoteDocNoticePuckComponent = {
       { value: 'no', label: 'Print the empty panel' },
     ] },
     fontFamily: fontField,
+    bodyPt: ptField('Text size in points'),
   },
   defaultProps: {
     lead: 'This quote holds until {{VALID_UNTIL}}.',
@@ -340,7 +373,10 @@ export const quoteDocNoticePuckRscComponent = { ...quoteDocNoticePuckComponent, 
 // Footer
 // ---------------------------------------------------------------------------
 
-type FooterProps = DocProps & { contact?: string; smallPrint?: string; align?: string; rule?: string }
+type FooterProps = DocProps & {
+  contact?: string; smallPrint?: string; align?: string; rule?: string
+  contactPt?: number; smallPrintPt?: number
+}
 
 export function QuoteDocFooter(props: FooterProps) {
   const ctx = useCtx(props)
@@ -356,7 +392,16 @@ export function QuoteDocFooter(props: FooterProps) {
     <>
       <Style />
       <FontLink family={props.fontFamily} />
-      <footer className={`qfs-doc-footer${align}${bare}`} style={font}>
+      <footer
+        className={`qfs-doc-footer${align}${bare}`}
+        style={{
+          ...font,
+          ...sizeVars({
+            '--qfs-doc-footer-contact-size': props.contactPt,
+            '--qfs-doc-footer-small-size': props.smallPrintPt,
+          }),
+        }}
+      >
         {contact && <p className="qfs-doc-contact">{contact}</p>}
         {/* Single newlines, not blank lines: registration small print is a run of
             short lines that belong to one another, not separate paragraphs. */}
@@ -387,6 +432,8 @@ export const quoteDocFooterPuckComponent = {
     ] },
     rule: { type: 'select' as const, label: 'Rule above it', options: yesNo },
     fontFamily: fontField,
+    contactPt: ptField('Contact line size in points'),
+    smallPrintPt: ptField('Small print size in points'),
   },
   defaultProps: {
     contact: '{{SITE_URL}} · {{BUSINESS_EMAIL}}',

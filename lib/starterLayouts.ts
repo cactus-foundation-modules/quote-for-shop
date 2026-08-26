@@ -11,6 +11,21 @@ const block = (type: string, id: string, props: Record<string, unknown> = {}) =>
 
 const split = (id: string, ratio: string) => ({ type: 'Split', props: { id, ratio, align: 'stretch', gap: 'lg', padding: 'none' } })
 
+// The letterhead: core's own Site Logo block, sitting above the heading. It is
+// core's rather than the module's so that the quote and the invoice it turns
+// into draw the same logo the same way, and so an owner can move it, resize it
+// or drop in a picture of their own without a field on the heading block.
+//
+// showIcon off: a shop that has uploaded no logo should print its own name, not
+// the Cactus mark. 48px is the height the quote's logo has always been.
+const logo = (height: number) => ({
+  type: 'SiteLogo',
+  props: {
+    id: 'quote-doc-logo', homeUrl: '/', imageUrl: '', imageUrlDark: '', align: 'left',
+    cellHeight: height, showTextWithLogo: 'false', showIcon: 'false', textColor: '',
+  },
+})
+
 // ---------------------------------------------------------------------------
 // Quote document - the thing a shopper sees in the lightbox and downloads
 // ---------------------------------------------------------------------------
@@ -24,7 +39,8 @@ export function quoteDocumentStarters() {
       publishByDefault: true,
       data: {
         content: [
-          block('QuoteDocHeader', 'quote-doc-head', { heading: '', fontFamily: '', showLogo: 'yes', showName: 'yes', showCode: 'yes' }),
+          logo(48),
+          block('QuoteDocHeader', 'quote-doc-head', { heading: '', fontFamily: '', showCode: 'yes' }),
           block('QuoteDocCustomer', 'quote-doc-for', { label: 'Prepared for', fontFamily: '', showMessage: 'yes' }),
           block('QuoteDocLines', 'quote-doc-lines', {
             fontFamily: '', showImages: 'no', imageSize: 'medium', showSku: 'yes',
@@ -59,9 +75,9 @@ export function quoteDocumentStarters() {
             ruleWeight: 'thick', corners: 'square', density: 'normal',
             bodyFont: '', headingFont: '',
           }),
+          logo(72),
           block('QuoteDocHeader', 'quote-doc-head', {
             heading: '', fontFamily: '', titleSize: 'display', sides: 'logo-left', rule: 'accent',
-            showLogo: 'yes', logoSize: 'large', showName: 'auto',
             factsLayout: 'stacked', numberStyle: 'lead',
             quoteLabel: 'Quote', showCode: 'no', codeLabel: 'Code',
             dateLabel: 'Issued', validLabel: 'Valid until',
@@ -112,7 +128,8 @@ export function quoteDocumentStarters() {
       description: 'The same quote with a thumbnail against every line - better for furniture and worse for long lists.',
       data: {
         content: [
-          block('QuoteDocHeader', 'quote-doc-head', { heading: '', fontFamily: '', showLogo: 'yes', showName: 'yes', showCode: 'yes' }),
+          logo(48),
+          block('QuoteDocHeader', 'quote-doc-head', { heading: '', fontFamily: '', showCode: 'yes' }),
           block('QuoteDocCustomer', 'quote-doc-for', { label: 'Prepared for', fontFamily: '', showMessage: 'yes' }),
           block('QuoteDocLines', 'quote-doc-lines', {
             fontFamily: '', showImages: 'yes', imageSize: 'medium', showSku: 'yes',
@@ -135,7 +152,8 @@ export function quoteDocumentStarters() {
       description: 'Heading and items only. For a shop that prices by hand and would rather not print a total it has not agreed to.',
       data: {
         content: [
-          block('QuoteDocHeader', 'quote-doc-head', { heading: '', fontFamily: '', showLogo: 'yes', showName: 'yes', showCode: 'yes' }),
+          logo(48),
+          block('QuoteDocHeader', 'quote-doc-head', { heading: '', fontFamily: '', showCode: 'yes' }),
           block('QuoteDocLines', 'quote-doc-lines', {
             fontFamily: '', showImages: 'no', imageSize: 'medium', showSku: 'yes',
             deliveryTiming: 'dates', leadTimeSuffix: 'from order',
