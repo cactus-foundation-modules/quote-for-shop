@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db/prisma'
 import { getSiteUrl } from '@/lib/config/env'
 import { resolveThemeLayout } from '@/lib/layout/resolveThemeLayout'
 import { buildFontHref, buildTokenStyles, type DesignTokens } from '@/lib/design/tokens'
+import { getShopConfigCached } from '@/modules/shop/lib/config'
 import { getQuoteConfigCached } from '@/modules/quote-for-shop/lib/config'
 import { injectQuoteDocContext, type QuoteDocContext } from '@/modules/quote-for-shop/lib/doc-context'
 import type { PublicQuote, Quote } from '@/modules/quote-for-shop/lib/types'
@@ -45,8 +46,13 @@ export function toPublicQuote(quote: Quote): PublicQuote {
 
 /** Everything the document's blocks need, gathered once. */
 export async function loadQuoteDocContext(quote: Quote, opts?: { print?: boolean }): Promise<QuoteDocContext> {
-  const [config, site] = await Promise.all([
+  const [config, shop, site] = await Promise.all([
     getQuoteConfigCached(),
+    // Read, never written. The trading identity on a quote has to be the one on
+    // the invoice the quote turns into, and the shop already keeps exactly one
+    // copy of it - so this module borrows it rather than asking an owner to type
+    // their VAT number into a second settings screen and keep the two in step.
+    getShopConfigCached().catch(() => null),
     prisma.siteConfig
       .findUnique({ where: { id: 'singleton' }, select: { siteName: true, logoMediaId: true } })
       .catch(() => null),
@@ -58,7 +64,21 @@ export async function loadQuoteDocContext(quote: Quote, opts?: { print?: boolean
 
   return {
     quote: toPublicQuote(quote),
-    site: { name: site?.siteName ?? '', logoUrl: logo?.url ?? null, url: getSiteUrl() },
+    site: {
+      name: site?.siteName ?? '',
+      logoUrl: logo?.url ?? null,
+      url: getSiteUrl(),
+      seller: shop
+        ? {
+            name: shop.invoiceBusinessName.trim() || shop.shopTitle.trim() || site?.siteName || '',
+            addressLines: shop.invoiceAddress.split(/\r?\n/).map((line) => line.trim()).filter(Boolean),
+            vatNumber: shop.invoiceVatNumber.trim(),
+            companyNumber: shop.invoiceCompanyNumber.trim(),
+            email: shop.invoiceContactEmail.trim() || shop.storeEmail.trim(),
+            phone: shop.invoiceContactPhone.trim(),
+          }
+        : undefined,
+    },
     copy: {
       heading: config.documentHeading,
       intro: config.documentIntro,

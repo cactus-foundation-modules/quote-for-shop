@@ -9,11 +9,31 @@ import type { PublicQuote } from '@/modules/quote-for-shop/lib/types'
 // quote instead - the canvas has no quote, and an author dragging blocks around
 // needs to see the shape of the thing they are designing.
 
+/** Who is quoting, as Shop settings has it. */
+export type QuoteDocSeller = {
+  name: string
+  addressLines: string[]
+  vatNumber: string
+  companyNumber: string
+  email: string
+  phone: string
+}
+
 export type QuoteDocContext = {
   quote: PublicQuote
   /** The site's own name and logo, so the document can head itself the way an
-   *  invoice does without every part reaching for the config. */
-  site: { name: string; logoUrl: string | null; url: string }
+   *  invoice does without every part reaching for the config.
+   *
+   *  `seller` is the trading identity the shop already keeps for its invoices -
+   *  read from Shop settings, never stored again here. A quote turns into an
+   *  order and then into an invoice, and the three saying different things about
+   *  who is selling would be worse than the quote saying nothing. Every field is
+   *  optional: a shop that has not filled the invoice form in gets a document
+   *  with the blanks left out rather than a document with "undefined" on it. */
+  site: {
+    name: string; logoUrl: string | null; url: string
+    seller?: QuoteDocSeller
+  }
   /** Wording from module settings: the heading, the intro, the terms and the
    *  validity note, resolved once. */
   copy: { heading: string; intro: string; terms: string; validity: string }
@@ -24,12 +44,18 @@ export type QuoteDocContext = {
 
 type PuckLikeData = { content?: unknown; zones?: Record<string, unknown>; root?: unknown }
 
+// Every block that reads the quote. The style block and the divider are not here
+// on purpose: neither prints a figure, so neither needs the document, and
+// attaching it to them would only make the injected tree bigger.
 const DOC_PART_TYPES = new Set([
   'QuoteDocHeader',
   'QuoteDocCustomer',
   'QuoteDocLines',
   'QuoteDocTotals',
   'QuoteDocNotes',
+  'QuoteDocParties',
+  'QuoteDocNotice',
+  'QuoteDocFooter',
 ])
 
 function attach(blocks: unknown[], ctx: QuoteDocContext): void {
@@ -98,11 +124,23 @@ export const SAMPLE_QUOTE_CONTEXT: QuoteDocContext = {
       shippingAmount: 0, taxAmount: 252, taxIncluded: true, total: 1512,
     },
     pricesHidden: false,
-    createdAt: new Date(0).toISOString(),
-    expiresAt: null,
+    createdAt: '2026-04-06T09:00:00.000Z',
+    expiresAt: '2026-05-06T09:00:00.000Z',
     expired: false,
   },
-  site: { name: 'Your shop', logoUrl: null, url: '' },
+  site: {
+    name: 'Your shop',
+    logoUrl: null,
+    url: 'https://example.com',
+    seller: {
+      name: 'Your business name',
+      addressLines: ['12 Example Street', 'Leeds', 'LS1 1AA'],
+      vatNumber: 'GB 123 4567 89',
+      companyNumber: '01234567',
+      email: 'sales@example.com',
+      phone: '0113 496 0000',
+    },
+  },
   copy: {
     heading: 'Your quote',
     intro: '',

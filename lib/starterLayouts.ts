@@ -42,6 +42,71 @@ export function quoteDocumentStarters() {
       },
     },
     {
+      id: 'starter-quote-document-designed',
+      name: 'Designed quote',
+      description: 'The same quote, laid out properly: a rule in your own colour under the heading, both addresses, the validity in a panel of its own, a banded item table and a company footer.',
+      data: {
+        // Colours are site tokens, not values - `var(--color-primary)` for the
+        // accent and `var(--color-bg-subtle)` for the bands. So the template is
+        // the SHAPE of a designed quote, drawn in whatever colours the site
+        // already uses, and an owner who wants their own accent changes one
+        // field on the style block rather than five blocks' worth of them.
+        content: [
+          block('QuoteDocStyle', 'quote-doc-style', {
+            accent: 'var(--color-primary)', labelColour: 'var(--color-primary)', titleColour: '',
+            tableHeadBg: 'var(--color-bg-subtle)', tableHeadInk: '',
+            panelBg: 'var(--color-bg-subtle)', panelInk: '', zebraBg: '',
+            ruleWeight: 'thick', corners: 'square', density: 'normal',
+            bodyFont: '', headingFont: '',
+          }),
+          block('QuoteDocHeader', 'quote-doc-head', {
+            heading: '', fontFamily: '', titleSize: 'display', sides: 'logo-left', rule: 'accent',
+            showLogo: 'yes', logoSize: 'large', showName: 'auto',
+            factsLayout: 'stacked', numberStyle: 'lead',
+            quoteLabel: 'Quote', showCode: 'no', codeLabel: 'Code',
+            dateLabel: 'Issued', validLabel: 'Valid until',
+          }),
+          block('QuoteDocParties', 'quote-doc-parties', {
+            fontFamily: '', order: 'to-first', columns: '2',
+            showTo: 'yes', toLabel: 'Quote for', showFrom: 'yes', fromLabel: 'From',
+            showRegistration: 'no', showMessage: 'no',
+          }),
+          block('QuoteDocNotice', 'quote-doc-notice', {
+            lead: 'This quote holds until {{VALID_UNTIL}}.',
+            body: 'Prices are the same ones on the site, and they are the same for every business. View it again at {{QUOTE_URL}}, or reply to us and we will turn it into an order.',
+            panelStyle: 'panel', hideWhenEmpty: 'yes', fontFamily: '',
+          }),
+          block('QuoteDocLines', 'quote-doc-lines', {
+            fontFamily: '', headStyle: 'filled', rowRules: 'every', zebra: 'no',
+            showImages: 'no', imageSize: 'medium', showSku: 'yes',
+            deliveryTiming: 'dates', leadTimeSuffix: 'from order',
+            itemLabel: 'Item', qtyLabel: 'Qty', priceLabel: 'Unit ex VAT', totalLabel: 'Total ex VAT',
+          }),
+          block('QuoteDocTotals', 'quote-doc-totals', {
+            fontFamily: '', emphasis: 'accent', width: 'normal',
+            subtotalLabel: 'Subtotal ex VAT', deliveryLabel: 'Delivery ex VAT',
+            showDeliveryRow: 'always', zeroDelivery: 'Worked out at order',
+            taxLabel: 'VAT', taxRatePercent: '20', totalLabel: 'Total',
+            note: '',
+          }),
+          block('QuoteDocNotes', 'quote-doc-notes', {
+            fontFamily: '', columns: '2', capsHeadings: 'yes',
+            showReply: 'yes', showValidity: 'no',
+            showDelivery: 'yes', deliveryHeading: 'Delivery',
+            deliveryText: 'Lead times are working days from order and are confirmed at the point we place it. Where an order ships in more than one delivery, each date is shown against its items.',
+            showTerms: 'yes', termsHeading: 'Terms',
+          }),
+          block('QuoteDocFooter', 'quote-doc-footer', {
+            contact: '{{SITE_URL}} · {{BUSINESS_EMAIL}}',
+            smallPrint: '{{BUSINESS_NAME}}, registered in England and Wales, company number {{COMPANY_NUMBER}}. VAT number {{VAT_NUMBER}}.\nRegistered office: {{BUSINESS_ADDRESS}}.',
+            align: 'center', rule: 'yes', fontFamily: '',
+          }),
+        ],
+        root: { props: {} },
+        zones: {},
+      },
+    },
+    {
       id: 'starter-quote-document-pictures',
       name: 'With pictures',
       description: 'The same quote with a thumbnail against every line - better for furniture and worse for long lists.',
