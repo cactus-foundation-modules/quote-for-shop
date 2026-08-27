@@ -4,7 +4,7 @@ import { getShopGate } from '@/modules/shop/lib/access'
 import { looksLikeQuoteCode, normaliseQuoteCode } from '@/modules/quote-for-shop/lib/code'
 import { getQuoteByCode } from '@/modules/quote-for-shop/lib/db/quotes'
 import { loadQuoteDocContext, renderQuoteDocument, renderQuoteRunningFooter } from '@/modules/quote-for-shop/lib/document'
-import { PdfFooterRegion } from '@/modules/shop/lib/doc-page-settings'
+import { DocumentFooterRegion } from '@/lib/documents/page-settings'
 
 // The quote document on its own: no site header, no footer, nothing but the
 // designed document. Two consumers - the iframe in the cart's lightbox, and the
@@ -85,7 +85,7 @@ export default async function QuoteDocumentViewPage({
           </p>
         )}
       </div>
-      <PdfFooterRegion>{runningFooter}</PdfFooterRegion>
+      <DocumentFooterRegion>{runningFooter}</DocumentFooterRegion>
     </>
   )
 }

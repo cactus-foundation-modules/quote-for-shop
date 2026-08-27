@@ -9,7 +9,7 @@ import { getShopConfigCached } from '@/modules/shop/lib/config'
 import { getQuoteConfigCached } from '@/modules/quote-for-shop/lib/config'
 import { injectQuoteDocContext, type QuoteDocContext } from '@/modules/quote-for-shop/lib/doc-context'
 import { docPageSetupFromLayout, type DocPageSetup } from '@/modules/quote-for-shop/lib/doc-page-settings'
-import { renderDocumentRunningFooter } from '@/modules/shop/lib/invoice-document'
+import { renderDocumentRunningFooter } from '@/lib/documents/footer'
 import type { InvoiceDocContext } from '@/modules/shop/lib/invoice-doc-context'
 import type { ShpInvoice } from '@/modules/shop/lib/types'
 import type { PublicQuote, Quote } from '@/modules/quote-for-shop/lib/types'
@@ -135,20 +135,23 @@ export async function renderQuoteDocument(ctx: QuoteDocContext): Promise<ReactNo
 // The running footer is NOT this module's own. A shop's paperwork - the
 // invoice, the credit note, the proforma and the quote it started as - is one
 // folder on somebody's desk, and a footer designed once belongs on all of it.
-// So there is exactly one footer layout type, `shopDocumentFooter`, owned by
-// the shop module (see modules/shop/lib/invoice-document.tsx), and this module
-// reuses it rather than keeping a second copy of the same idea. Quote already
-// depends on shop for its trading identity (`loadQuoteDocContext` above reads
-// Shop settings for exactly this reason), so reaching into its render path for
-// the footer is the same dependency, not a new one.
+// So there is exactly one footer layout type, `documentFooter`, and it is
+// CORE's: a purchase order or anything else a module prints puts its small
+// print at the foot of the same designed strip.
 //
-// The shop's footer renderer wants an `InvoiceDocContext`; a quote has no
-// invoice, so `quoteAsDocFooterContext` builds the smallest stand-in that gets
-// the footer's own blocks (contact line, small print, page number, rule) what
-// they read - the trading identity and this document's own number - and
-// nothing more. The line items, totals and dates a real invoice carries are
-// never touched by anything the footer can hold, so they are left as blanks
-// rather than invented.
+// `shopDocumentFooter` is named below as a fallback and nothing more. It is the
+// layout type the shop shipped before core had one, so a shop that designed a
+// footer under the old key keeps printing it on its quotes with nothing
+// migrated - exactly as shop's own documents do. A string in a list, not an
+// import: this module reads the shop's settings, not its render path.
+//
+// The footer's blocks want a document to read; a quote has no invoice, so
+// `quoteAsDocFooterContext` builds the smallest stand-in that gets the shop's
+// footer blocks (contact line, small print, page number, rule) what they read -
+// the trading identity and this document's own number - and nothing more. The
+// line items, totals and dates a real invoice carries are never touched by
+// anything the footer can hold, so they are left as blanks rather than
+// invented.
 
 /** The paper, margins and scale the quote layout asks to be printed on. */
 export async function quoteDocumentPageSetup(): Promise<DocPageSetup> {
@@ -182,8 +185,11 @@ function quoteAsDocFooterContext(ctx: QuoteDocContext): InvoiceDocContext {
   return { invoice, print: ctx.print }
 }
 
-/** The shop's shared PDF footer, rendered for this quote - or null when nobody
- *  has published one, which is every shop until somebody makes one. */
+/** The shared PDF footer, rendered for this quote - or null when nobody has
+ *  published one, which is every shop until somebody makes one. */
 export async function renderQuoteRunningFooter(ctx: QuoteDocContext): Promise<ReactNode | null> {
-  return renderDocumentRunningFooter(quoteAsDocFooterContext(ctx))
+  return renderDocumentRunningFooter(quoteAsDocFooterContext(ctx), {
+    fallbackLayoutTypes: ['shopDocumentFooter'],
+    moduleName: 'shop',
+  })
 }

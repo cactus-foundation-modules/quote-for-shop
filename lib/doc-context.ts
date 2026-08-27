@@ -1,3 +1,4 @@
+import { injectDocumentContext, type PuckLikeData } from '@/lib/documents/context'
 import type { PublicQuote } from '@/modules/quote-for-shop/lib/types'
 
 // Context injected onto every quote-document part-block before the layout
@@ -50,12 +51,10 @@ export type QuoteDocContext = {
   print: boolean
 }
 
-type PuckLikeData = { content?: unknown; zones?: Record<string, unknown>; root?: unknown }
-
 // Every block that reads the quote. The style block and the divider are not here
 // on purpose: neither prints a figure, so neither needs the document, and
 // attaching it to them would only make the injected tree bigger.
-const DOC_PART_TYPES = new Set([
+const DOC_PART_TYPES = [
   'QuoteDocHeader',
   'QuoteDocCustomer',
   'QuoteDocLines',
@@ -66,33 +65,17 @@ const DOC_PART_TYPES = new Set([
   'QuoteDocTo',
   'QuoteDocNotice',
   'QuoteDocFooter',
-])
-
-function attach(blocks: unknown[], ctx: QuoteDocContext): void {
-  for (const item of blocks) {
-    if (!item || typeof item !== 'object') continue
-    const block = item as { type?: string; props?: Record<string, unknown> }
-    if (block.type && block.props && DOC_PART_TYPES.has(block.type)) {
-      block.props._ctx = ctx
-    }
-    if (block.props) {
-      for (const [key, value] of Object.entries(block.props)) {
-        // Recurse into nested slot arrays (Split/Section zones), but never into
-        // the context just attached.
-        if (key !== '_ctx' && Array.isArray(value)) attach(value, ctx)
-      }
-    }
-  }
-}
+]
 
 /** Clones the saved layout (pure JSON) and attaches the context by reference, so
- *  one object is shared by every part rather than serialised per block. */
+ *  one object is shared by every part rather than serialised per block.
+ *
+ *  The walk itself is core's (lib/documents/context.ts). It was written in the
+ *  shop module, copied here, and would have been copied a third time by the next
+ *  module to print anything. What stays here is the only part that is this
+ *  module's: which blocks read a quote. */
 export function injectQuoteDocContext<T extends PuckLikeData>(data: T, ctx: QuoteDocContext): T {
-  const cloned = JSON.parse(JSON.stringify(data)) as T
-  const content = Array.isArray(cloned.content) ? cloned.content : []
-  const zoneBlocks = Object.values(cloned.zones ?? {}).flatMap((z) => (Array.isArray(z) ? z : []))
-  attach([...content, ...zoneBlocks], ctx)
-  return cloned
+  return injectDocumentContext(data, ctx, DOC_PART_TYPES)
 }
 
 /** The sample quote the editor canvas draws, so an author designing the document
