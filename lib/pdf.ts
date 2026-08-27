@@ -69,22 +69,40 @@ const RUNNING_FOOTER_RESET = `
 html, body { margin: 0; padding: 0; font-size: 12px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .cactus-pdf-footer { width: 100%; box-sizing: border-box; font-size: 9px; line-height: 1.4; color: #444; }
 .cactus-pdf-footer * { box-sizing: border-box; }
+.cactus-pdf-footer .shp-inv-footer, .cactus-pdf-footer .shp-inv-notice { margin-top: 0; }
 .cactus-pdf-footer .qfs-doc-footer, .cactus-pdf-footer .qfs-doc-notice { margin-top: 0; }
+`
+
+/**
+ * And the last word, after the document's own rules have had theirs. The
+ * template is a document of its own and the footer sits directly under its body,
+ * a place the document's stylesheet has opinions about that make no sense here.
+ */
+const RUNNING_FOOTER_FORCE = `
+.cactus-pdf-footer, .cactus-pdf-footer * { visibility: visible !important; }
+.cactus-pdf-footer { display: block !important; }
 `
 
 type RunningFooter = { html: string; css: string }
 
-/** Lifts the footer region and every stylesheet the document carries out of the
- *  printed page, so the running footer is drawn from the same blocks and the
- *  same rules as the document itself. Null when the shop has published no PDF
- *  footer layout, which is the ordinary case. */
+/**
+ * Lifts the footer region out of the printed page, with the stylesheets it
+ * carries. Null when the shop has published no PDF footer layout, which is the
+ * ordinary case.
+ *
+ * Only the stylesheets INSIDE THE REGION - see the long note on the shop's own
+ * copy of this in modules/shop/lib/invoice-pdf.ts. Sweeping the whole page for
+ * `<style>` drags in `body > *:not(main) { display: none !important }`, which
+ * the document page uses to strip the site chrome and which, copied into the
+ * template, matches the footer's own wrapper and prints nothing at all.
+ */
 async function captureRunningFooter(page: Page): Promise<RunningFooter | null> {
   try {
     return await page.evaluate((id: string) => {
       const region = document.getElementById(id)
       const html = region?.innerHTML?.trim() ?? ''
       if (!html) return null
-      const css = Array.from(document.querySelectorAll('style'))
+      const css = Array.from(region!.querySelectorAll('style'))
         .map((node) => node.textContent ?? '')
         .join('\n')
       return { html, css }
@@ -176,7 +194,7 @@ export async function renderQuotePdf(path: string, setup?: DocPageSetup): Promis
         ? {
             displayHeaderFooter: true,
             headerTemplate: '<span></span>',
-            footerTemplate: `<style>${RUNNING_FOOTER_RESET}${footer.css}</style><div class="cactus-pdf-footer" style="padding: 0 ${paper.margin.right} 0 ${paper.margin.left};">${footer.html}</div>`,
+            footerTemplate: `<style>${RUNNING_FOOTER_RESET}${footer.css}${RUNNING_FOOTER_FORCE}</style><div class="cactus-pdf-footer" style="padding: 0 ${paper.margin.right} 0 ${paper.margin.left};">${footer.html}</div>`,
           }
         : {}),
     })

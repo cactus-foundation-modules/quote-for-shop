@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import {
-  Style, FontLink, fontStyle, fontField, sizeField, radiusField, spaceField, sizeVars, cssLength,
+  Style, FontLink, fontStyle, fontField, headingFontField, sizeField, radiusField, spaceField, sizeVars, cssLength,
   colourField, yesNo, fillTokens, quoteTokens, paragraphs, useCtx, TOKEN_HINT,
   type DocProps,
 } from '@/modules/quote-for-shop/components/puck/doc-shared'
@@ -155,11 +155,7 @@ export const quoteDocStylePuckComponent = {
     blockGap: spaceField('…or exactly this gap between blocks'),
     blockGapLarge: spaceField('…and this one before the small print'),
     bodyFont: fontField,
-    headingFont: {
-      type: 'custom' as const,
-      label: 'Heading font (blank uses the site heading font)',
-      render: fontField.render,
-    },
+    headingFont: headingFontField,
   },
   defaultProps: {
     accent: '', labelColour: '', titleColour: '',

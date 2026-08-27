@@ -419,7 +419,7 @@ export const quoteDocLinesPuckComponent = {
       { value: 'none', label: 'Only under the last one' },
     ] },
     zebra: { type: 'select' as const, label: 'Shade alternate rows', options: yesNo },
-    headRadius: radiusField('Column heading corners'),
+    headRadius: radiusField('Column heading corners (needs a filled band)'),
     headRadiusEdges: { type: 'select' as const, label: 'Those corners go on', options: [
       { value: 'outer', label: 'The outer ends of the band' },
       { value: 'every', label: 'Every heading cell' },
