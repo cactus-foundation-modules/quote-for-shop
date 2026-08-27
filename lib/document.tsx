@@ -139,11 +139,10 @@ export async function renderQuoteDocument(ctx: QuoteDocContext): Promise<ReactNo
 // CORE's: a purchase order or anything else a module prints puts its small
 // print at the foot of the same designed strip.
 //
-// `shopDocumentFooter` is named below as a fallback and nothing more. It is the
-// layout type the shop shipped before core had one, so a shop that designed a
-// footer under the old key keeps printing it on its quotes with nothing
-// migrated - exactly as shop's own documents do. A string in a list, not an
-// import: this module reads the shop's settings, not its render path.
+// The shop's own `shopDocumentFooter`, from before core had a footer type, is
+// gone: shop's migration 030 moves anything published under it across to
+// `documentFooter`, so a quote keeps printing the footer it printed yesterday
+// and there is one entry in the Layouts screen where there were two.
 //
 // The footer's blocks want a document to read; a quote has no invoice, so
 // `quoteAsDocFooterContext` builds the smallest stand-in that gets the shop's
@@ -188,8 +187,5 @@ function quoteAsDocFooterContext(ctx: QuoteDocContext): InvoiceDocContext {
 /** The shared PDF footer, rendered for this quote - or null when nobody has
  *  published one, which is every shop until somebody makes one. */
 export async function renderQuoteRunningFooter(ctx: QuoteDocContext): Promise<ReactNode | null> {
-  return renderDocumentRunningFooter(quoteAsDocFooterContext(ctx), {
-    fallbackLayoutTypes: ['shopDocumentFooter'],
-    moduleName: 'shop',
-  })
+  return renderDocumentRunningFooter(quoteAsDocFooterContext(ctx), { moduleName: 'shop' })
 }
