@@ -2,7 +2,8 @@ import { formatMoney } from '@/modules/shop/lib/money'
 import { sortLinesByGroup } from '@/modules/shop/lib/cart-group'
 import { restateDelivery } from '@/modules/quote-for-shop/lib/delivery-timing'
 import {
-  Style, FontLink, fontStyle, fontField, ptField, sizeVars, yesNo, formatDate, useCtx,
+  Style, FontLink, fontStyle, fontField, sizeField, radiusField, spaceField, sizeVars, cssLength,
+  yesNo, formatDate, useCtx,
   type DocProps,
 } from '@/modules/quote-for-shop/components/puck/doc-shared'
 
@@ -44,7 +45,8 @@ type HeaderProps = DocProps & {
   titleSize?: string; sides?: string; rule?: string
   factsLayout?: string; numberStyle?: string
   quoteLabel?: string; codeLabel?: string; dateLabel?: string; validLabel?: string
-  titlePt?: number; numberPt?: number; factsPt?: number; introPt?: number
+  showDate?: string; showValid?: string
+  titlePt?: number | string; numberPt?: number | string; factsPt?: number | string; introPt?: number | string
 }
 
 const TITLE_SIZES: Record<string, string> = {
@@ -82,6 +84,17 @@ export function QuoteDocHeader(props: HeaderProps) {
   // supporting detail.
   const leadNumber = props.numberStyle === 'lead'
 
+  // Built as a list and then filtered, rather than as four conditionals inside
+  // the <dl>. A row whose value is empty used to reach the markup as a label
+  // with nothing beside it, and on the printed page that is a line of white
+  // space under a heading that says nothing. A row with no value is not a row.
+  const facts: { label: string; value: string }[] = []
+  if (!leadNumber) facts.push({ label: props.quoteLabel?.trim() || 'Quote', value: quote.quoteNumber ?? '' })
+  if (props.showCode !== 'no') facts.push({ label: props.codeLabel?.trim() || 'Code', value: quote.code ?? '' })
+  if (props.showDate !== 'no') facts.push({ label: props.dateLabel?.trim() || 'Date', value: formatDate(quote.createdAt) })
+  if (props.showValid !== 'no') facts.push({ label: props.validLabel?.trim() || 'Valid until', value: formatDate(quote.expiresAt) })
+  const rows = facts.filter((row) => row.value.trim() !== '')
+
   return (
     <>
       <Style />
@@ -90,28 +103,18 @@ export function QuoteDocHeader(props: HeaderProps) {
         <div className="qfs-doc-meta">
           <h1 className={`qfs-doc-h1${TITLE_SIZES[props.titleSize ?? 'medium'] ?? ''}`} style={font}>{heading}</h1>
           {leadNumber && quote.quoteNumber && <p className="qfs-doc-lead">{quote.quoteNumber}</p>}
-          <dl className={`qfs-doc-facts${stacked ? ' qfs-doc-facts-stack' : ''}`}>
-            {!leadNumber && (
-              <>
-                <dt>{props.quoteLabel?.trim() || 'Quote'}</dt>
-                <dd>{quote.quoteNumber}</dd>
-              </>
-            )}
-            {props.showCode !== 'no' && (
-              <>
-                <dt>{props.codeLabel?.trim() || 'Code'}</dt>
-                <dd>{quote.code}</dd>
-              </>
-            )}
-            <dt>{props.dateLabel?.trim() || 'Date'}</dt>
-            <dd>{formatDate(quote.createdAt)}</dd>
-            {quote.expiresAt && (
-              <>
-                <dt>{props.validLabel?.trim() || 'Valid until'}</dt>
-                <dd>{formatDate(quote.expiresAt)}</dd>
-              </>
-            )}
-          </dl>
+          {/* No rows at all means no list at all: an empty <dl> still carries
+              the grid's own row gap, and that gap is white space on paper. */}
+          {rows.length > 0 && (
+            <dl className={`qfs-doc-facts${stacked ? ' qfs-doc-facts-stack' : ''}`}>
+              {rows.map((row, i) => (
+                <div className="qfs-doc-fact" key={`${row.label}-${i}`}>
+                  <dt>{row.label}</dt>
+                  <dd>{row.value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
         </div>
       </header>
       {/* A sibling of the header rather than a child of it, so it carries its
@@ -137,7 +140,7 @@ export const quoteDocHeaderPuckComponent = {
       { value: 'large', label: 'Large' },
       { value: 'display', label: 'Very large' },
     ] },
-    titlePt: ptField('Heading size in points (overrides the box above)'),
+    titlePt: sizeField('Heading size (overrides the menu above)'),
     sides: { type: 'select' as const, label: 'The heading sits', options: [
       // Values kept as they were: a layout saved when this also flipped the logo
       // keeps the side it was set to, without a data migration.
@@ -160,19 +163,21 @@ export const quoteDocHeaderPuckComponent = {
     quoteLabel: { type: 'text' as const, label: '"Quote" row label' },
     showCode: { type: 'select' as const, label: 'Retrieval code', options: yesNo },
     codeLabel: { type: 'text' as const, label: '"Code" row label' },
+    showDate: { type: 'select' as const, label: 'Date row', options: yesNo },
     dateLabel: { type: 'text' as const, label: '"Date" row label' },
+    showValid: { type: 'select' as const, label: '"Valid until" row', options: yesNo },
     validLabel: { type: 'text' as const, label: '"Valid until" row label' },
-    numberPt: ptField('Quote number size in points'),
-    factsPt: ptField('Dates and numbers size in points'),
-    introPt: ptField('Opening line size in points'),
+    numberPt: sizeField('Quote number size'),
+    factsPt: sizeField('Dates and numbers size'),
+    introPt: sizeField('Opening line size'),
   },
-  // No defaults for the point sizes on purpose: blank is "leave it as it is",
+  // No defaults for the sizes on purpose: blank is "leave it as it is",
   // and a default would set every document's sizes the moment the field shipped.
   defaultProps: {
     heading: '', fontFamily: '', titleSize: 'medium', sides: 'logo-left', rule: 'hairline',
     factsLayout: 'columns', numberStyle: 'row',
     quoteLabel: 'Quote', showCode: 'yes', codeLabel: 'Code',
-    dateLabel: 'Date', validLabel: 'Valid until',
+    showDate: 'yes', dateLabel: 'Date', showValid: 'yes', validLabel: 'Valid until',
   },
   render: QuoteDocHeader,
 }
@@ -236,9 +241,9 @@ export const quoteDocCustomerPuckComponent = {
     capsHeading: { type: 'select' as const, label: 'Heading in small capitals', options: yesNo },
     fontFamily: fontField,
     showMessage: { type: 'select' as const, label: 'What the customer wrote', options: yesNo },
-    headingPt: ptField('Heading size in points'),
-    namePt: ptField('Name size in points'),
-    messagePt: ptField('Size in points of what the customer wrote'),
+    headingPt: sizeField('Heading size'),
+    namePt: sizeField('Name size'),
+    messagePt: sizeField('Size of what the customer wrote'),
   },
   defaultProps: { label: 'Prepared for', capsHeading: 'no', fontFamily: '', showMessage: 'yes' },
   render: QuoteDocCustomer,
@@ -254,7 +259,20 @@ type LinesProps = DocProps & {
   deliveryTiming?: string; leadTimeSuffix?: string
   itemLabel?: string; qtyLabel?: string; priceLabel?: string; totalLabel?: string
   headStyle?: string; rowRules?: string; zebra?: string
-  headPt?: number; rowPt?: number; skuPt?: number; detailPt?: number; poaPt?: number
+  headPt?: number | string; rowPt?: number | string; skuPt?: number | string
+  detailPt?: number | string; poaPt?: number | string
+  headRadius?: string; headRadiusEdges?: string; headPadX?: string; headPadY?: string
+  rowPadY?: string; rowRadius?: string; descWidth?: string; headCase?: string
+}
+
+/** How much of the table the item column takes, leaving the money columns
+ *  whatever is left. `auto` is the browser's own guess, which is what the table
+ *  has always used. */
+const DESC_WIDTHS: Record<string, string> = {
+  auto: '',
+  half: '50%',
+  wide: '60%',
+  widest: '70%',
 }
 
 const imageSizes = [
@@ -287,7 +305,26 @@ export function QuoteDocLines(props: LinesProps) {
     props.headStyle === 'filled' ? 'qfs-doc-thead-fill' : '',
     props.zebra === 'yes' ? 'qfs-doc-zebra' : '',
     props.rowRules === 'none' ? 'qfs-doc-rows-none' : '',
+    props.headRadiusEdges === 'every' ? 'qfs-doc-thead-round-all' : '',
+    props.headCase === 'plain' ? 'qfs-doc-thead-plain' : '',
   ].filter(Boolean).join(' ')
+
+  // The corner radius on the column headings, and the padding around them, as
+  // properties rather than classes: an owner picking 6px means 6px, not
+  // "slightly rounded". Blank leaves the document style block's own corner
+  // setting standing, which is what every layout published before this had.
+  const shape: Record<string, string> = {}
+  const headRadius = cssLength(props.headRadius)
+  if (headRadius) shape['--qfs-doc-thead-radius'] = headRadius
+  const rowRadius = cssLength(props.rowRadius)
+  if (rowRadius) shape['--qfs-doc-row-radius'] = rowRadius
+  const headPadX = cssLength(props.headPadX)
+  if (headPadX) shape['--qfs-doc-thead-pad-x'] = headPadX
+  const headPadY = cssLength(props.headPadY)
+  if (headPadY) shape['--qfs-doc-thead-pad-y'] = headPadY
+  const rowPadY = cssLength(props.rowPadY)
+  if (rowPadY) shape['--qfs-doc-row-y'] = rowPadY
+  const descWidth = DESC_WIDTHS[props.descWidth ?? 'auto'] ?? ''
 
   return (
     <>
@@ -303,12 +340,13 @@ export function QuoteDocLines(props: LinesProps) {
             '--qfs-doc-sku-size': props.skuPt,
             '--qfs-doc-detail-size': props.detailPt,
           }),
+          ...shape,
         }}
       >
         <thead>
           <tr>
             {showImages && <th className="qfs-doc-imgcol" aria-hidden="true" />}
-            <th>{props.itemLabel?.trim() || 'Item'}</th>
+            <th style={descWidth ? { width: descWidth } : undefined}>{props.itemLabel?.trim() || 'Item'}</th>
             <th className="qfs-doc-num">{props.qtyLabel?.trim() || 'Qty'}</th>
             {showMoney && <th className="qfs-doc-num">{props.priceLabel?.trim() || 'Unit price'}</th>}
             {showMoney && <th className="qfs-doc-num">{props.totalLabel?.trim() || 'Total'}</th>}
@@ -381,6 +419,25 @@ export const quoteDocLinesPuckComponent = {
       { value: 'none', label: 'Only under the last one' },
     ] },
     zebra: { type: 'select' as const, label: 'Shade alternate rows', options: yesNo },
+    headRadius: radiusField('Column heading corners'),
+    headRadiusEdges: { type: 'select' as const, label: 'Those corners go on', options: [
+      { value: 'outer', label: 'The outer ends of the band' },
+      { value: 'every', label: 'Every heading cell' },
+    ] },
+    headPadX: spaceField('Space either side of a column heading'),
+    headPadY: spaceField('Space above and below a column heading'),
+    headCase: { type: 'select' as const, label: 'Column headings read', options: [
+      { value: 'caps', label: 'IN SMALL CAPITALS' },
+      { value: 'plain', label: 'As you typed them' },
+    ] },
+    rowPadY: spaceField('Space above and below an item row'),
+    rowRadius: radiusField('Shaded row corners'),
+    descWidth: { type: 'select' as const, label: 'Item column takes', options: [
+      { value: 'auto', label: 'As much as it needs' },
+      { value: 'half', label: 'Half the table' },
+      { value: 'wide', label: 'Three fifths' },
+      { value: 'widest', label: 'Seven tenths' },
+    ] },
     showImages: { type: 'select' as const, label: 'Product pictures', options: yesNo },
     imageSize: { type: 'select' as const, label: 'Picture size', options: imageSizes },
     showSku: { type: 'select' as const, label: 'Product codes', options: yesNo },
@@ -390,14 +447,16 @@ export const quoteDocLinesPuckComponent = {
     qtyLabel: { type: 'text' as const, label: 'Quantity column' },
     priceLabel: { type: 'text' as const, label: 'Unit price column' },
     totalLabel: { type: 'text' as const, label: 'Line total column' },
-    headPt: ptField('Column heading size in points'),
-    rowPt: ptField('Item row size in points'),
-    skuPt: ptField('Product code size in points'),
-    detailPt: ptField('Options and delivery detail size in points'),
-    poaPt: ptField('Size in points of the line where prices are withheld'),
+    headPt: sizeField('Column heading size'),
+    rowPt: sizeField('Item row size'),
+    skuPt: sizeField('Product code size'),
+    detailPt: sizeField('Options and delivery detail size'),
+    poaPt: sizeField('Size of the line where prices are withheld'),
   },
   defaultProps: {
     fontFamily: '', headStyle: 'rule', rowRules: 'every', zebra: 'no',
+    headRadius: '', headRadiusEdges: 'outer', headPadX: '', headPadY: '',
+    headCase: 'caps', rowPadY: '', rowRadius: '', descWidth: 'auto',
     showImages: 'no', imageSize: 'medium', showSku: 'yes',
     deliveryTiming: 'dates', leadTimeSuffix: 'from order',
     itemLabel: 'Item', qtyLabel: 'Qty', priceLabel: 'Unit price', totalLabel: 'Total',
@@ -523,9 +582,9 @@ export const quoteDocTotalsPuckComponent = {
     taxRatePercent: { type: 'text' as const, label: 'Tax rate to print in that row, e.g. "20" (blank prints none)' },
     totalLabel: { type: 'text' as const, label: 'Total row' },
     note: { type: 'textarea' as const, label: 'Delivery note under the totals (blank prints nothing)' },
-    rowPt: ptField('Row size in points'),
-    totalPt: ptField('Total size in points'),
-    notePt: ptField('Delivery note size in points'),
+    rowPt: sizeField('Row size'),
+    totalPt: sizeField('Total size'),
+    notePt: sizeField('Delivery note size'),
   },
   defaultProps: {
     fontFamily: '', emphasis: 'rule', width: 'normal',
@@ -618,10 +677,10 @@ export const quoteDocNotesPuckComponent = {
     deliveryText: { type: 'textarea' as const, label: 'What the delivery column says, on this layout only' },
     showTerms: { type: 'select' as const, label: 'Terms', options: yesNo },
     termsHeading: { type: 'text' as const, label: 'Terms heading' },
-    headingPt: ptField('Heading size in points'),
-    replyPt: ptField('Size in points of your reply'),
-    validityPt: ptField('Size in points of how long the quote stands'),
-    smallPrintPt: ptField('Terms and delivery size in points'),
+    headingPt: sizeField('Heading size'),
+    replyPt: sizeField('Size of your reply'),
+    validityPt: sizeField('Size of how long the quote stands'),
+    smallPrintPt: sizeField('Terms and delivery size'),
   },
   defaultProps: {
     fontFamily: '', columns: '1', capsHeadings: 'no',

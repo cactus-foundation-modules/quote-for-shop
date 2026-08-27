@@ -3,7 +3,8 @@ import { notFound } from 'next/navigation'
 import { getShopGate } from '@/modules/shop/lib/access'
 import { looksLikeQuoteCode, normaliseQuoteCode } from '@/modules/quote-for-shop/lib/code'
 import { getQuoteByCode } from '@/modules/quote-for-shop/lib/db/quotes'
-import { loadQuoteDocContext, renderQuoteDocument } from '@/modules/quote-for-shop/lib/document'
+import { loadQuoteDocContext, renderQuoteDocument, renderQuoteRunningFooter } from '@/modules/quote-for-shop/lib/document'
+import { PdfFooterRegion } from '@/modules/quote-for-shop/lib/doc-page-settings'
 
 // The quote document on its own: no site header, no footer, nothing but the
 // designed document. Two consumers - the iframe in the cart's lightbox, and the
@@ -68,6 +69,10 @@ export default async function QuoteDocumentViewPage({
 
   const ctx = await loadQuoteDocContext(quote, { print })
   const document = await renderQuoteDocument(ctx)
+  // Only when printing: it is a region for the printing browser to lift out, and
+  // rendering it for the cart's lightbox would be a layout resolved and a tree
+  // built for something nobody can see.
+  const runningFooter = print ? await renderQuoteRunningFooter(ctx) : null
 
   return (
     <>
@@ -80,6 +85,7 @@ export default async function QuoteDocumentViewPage({
           </p>
         )}
       </div>
+      <PdfFooterRegion>{runningFooter}</PdfFooterRegion>
     </>
   )
 }

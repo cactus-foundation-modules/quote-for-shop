@@ -58,6 +58,11 @@ export const QUOTE_DOC_CSS = `
    titles - which is what they are once the quote number leads the page. */
 .qfs-doc-h2.qfs-doc-h2-caps { font-size: var(--qfs-doc-h2-size, 0.8125rem); text-transform: uppercase; letter-spacing: 0.04em; color: var(--qfs-doc-label, var(--color-text-muted)); }
 .qfs-doc-facts { display: grid; grid-template-columns: auto auto; gap: 0.125rem 0.75rem; margin: 0; font-size: var(--qfs-doc-facts-size, 0.875rem); justify-content: end; }
+/* Each label-and-value pair is wrapped, so a row can be dropped whole rather
+   than as two loose children of the grid - which is what left a gap on the page
+   when a quote had no expiry date. display: contents keeps the pair as two grid
+   cells, exactly as it was when they were direct children. */
+.qfs-doc-facts .qfs-doc-fact { display: contents; }
 .qfs-doc-facts dt { color: var(--color-text-muted); }
 .qfs-doc-facts dd { margin: 0; color: var(--color-text); font-variant-numeric: tabular-nums; }
 /* Stacked facts read "Issued 6 April 2026" on one line instead of ruling the
@@ -65,10 +70,13 @@ export const QUOTE_DOC_CSS = `
    drawn rather than typed: a text node between <dt> and <dd> is not something a
    <dl> may hold, and white-space: pre stops it collapsing to nothing. */
 .qfs-doc-facts.qfs-doc-facts-stack { display: block; text-align: right; line-height: 1.5; }
+/* The wrapper is the line here, so each pair breaks after itself. It used to be
+   an empty ::after block on every <dd>, which put one blank line under the last
+   row of every stacked heading. */
+.qfs-doc-facts.qfs-doc-facts-stack .qfs-doc-fact { display: block; }
 .qfs-doc-facts.qfs-doc-facts-stack dt { display: inline; }
 .qfs-doc-facts.qfs-doc-facts-stack dd { display: inline; }
 .qfs-doc-facts.qfs-doc-facts-stack dt::after { content: ' '; white-space: pre; }
-.qfs-doc-facts.qfs-doc-facts-stack dd::after { content: ''; display: block; }
 /* The quote's own number, printed above the dates with no label. */
 .qfs-doc-lead { margin: 0 0 0.375rem; font-weight: 700; font-size: var(--qfs-doc-lead-size, 1rem); color: var(--qfs-doc-title-ink, var(--color-text)); font-variant-numeric: tabular-nums; }
 .qfs-doc-intro { margin: 1rem 0 0; font-size: var(--qfs-doc-intro-size, inherit); color: var(--color-text); }
@@ -82,6 +90,11 @@ export const QUOTE_DOC_CSS = `
    turns into is already set. */
 .qfs-doc-parties { margin: var(--qfs-doc-gap, 1.5rem) 0 0; display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
 .qfs-doc-parties.qfs-doc-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* A single party on its own - the "From" and "To" blocks, which are one column
+   each and must not be stretched across a grid of one. */
+.qfs-doc-parties.qfs-doc-party-one { display: block; }
+.qfs-doc-parties.qfs-doc-party-centre { text-align: center; }
+.qfs-doc-parties.qfs-doc-party-right { text-align: right; }
 .qfs-doc-party address { font-style: normal; display: grid; gap: 0.125rem; color: var(--color-text); font-size: var(--qfs-doc-party-size, 0.9375rem); }
 .qfs-doc-party .qfs-doc-strong { font-weight: 600; }
 .qfs-doc-reg { margin: 0.5rem 0 0; display: grid; gap: 0.125rem; font-size: var(--qfs-doc-reg-size, 0.8125rem); color: var(--color-text-muted); }
@@ -94,12 +107,24 @@ export const QUOTE_DOC_CSS = `
    ruled head does not, so the whole treatment is one class rather than a colour
    swapped underneath. print-color-adjust keeps it in the PDF: a browser drops
    backgrounds when it prints unless told the fill is the point. */
-.qfs-doc-lines.qfs-doc-thead-fill th { background: var(--qfs-doc-thead-bg, var(--color-bg-subtle)); padding: 0.625rem 0.75rem; border-bottom: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.qfs-doc-lines.qfs-doc-thead-fill th:first-child { padding-left: 0.75rem; border-radius: var(--qfs-doc-radius, 0) 0 0 var(--qfs-doc-radius, 0); }
-.qfs-doc-lines.qfs-doc-thead-fill th:last-child { padding-right: 0.75rem; border-radius: 0 var(--qfs-doc-radius, 0) var(--qfs-doc-radius, 0) 0; }
-.qfs-doc-lines.qfs-doc-thead-fill td:first-child { padding-left: 0.75rem; }
-.qfs-doc-lines.qfs-doc-thead-fill td:last-child { padding-right: 0.75rem; }
+.qfs-doc-lines.qfs-doc-thead-fill th { background: var(--qfs-doc-thead-bg, var(--color-bg-subtle)); padding: var(--qfs-doc-thead-pad-y, 0.625rem) var(--qfs-doc-thead-pad-x, 0.75rem); border-bottom: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+/* The band's own corners. --qfs-doc-thead-radius is the Items block's own field
+   and falls back to the document style block's --qfs-doc-radius, so a layout
+   that set corners once still gets them and one that wants a different radius on
+   this table alone can have it. */
+.qfs-doc-lines.qfs-doc-thead-fill th:first-child { padding-left: var(--qfs-doc-thead-pad-x, 0.75rem); border-radius: var(--qfs-doc-thead-radius, var(--qfs-doc-radius, 0)) 0 0 var(--qfs-doc-thead-radius, var(--qfs-doc-radius, 0)); }
+.qfs-doc-lines.qfs-doc-thead-fill th:last-child { padding-right: var(--qfs-doc-thead-pad-x, 0.75rem); border-radius: 0 var(--qfs-doc-thead-radius, var(--qfs-doc-radius, 0)) var(--qfs-doc-thead-radius, var(--qfs-doc-radius, 0)) 0; }
+/* Every cell rounded, for a banded head an owner wants read as separate chips
+   rather than as one bar. */
+.qfs-doc-lines.qfs-doc-thead-fill.qfs-doc-thead-round-all th { border-radius: var(--qfs-doc-thead-radius, var(--qfs-doc-radius, 0)); }
+.qfs-doc-lines.qfs-doc-thead-fill td:first-child { padding-left: var(--qfs-doc-thead-pad-x, 0.75rem); }
+.qfs-doc-lines.qfs-doc-thead-fill td:last-child { padding-right: var(--qfs-doc-thead-pad-x, 0.75rem); }
+/* Column headings as typed, for a document whose headings are words rather than
+   labels ("Item" reads better than "ITEM" at 14px). */
+.qfs-doc-lines.qfs-doc-thead-plain th { text-transform: none; letter-spacing: normal; }
 .qfs-doc-lines.qfs-doc-zebra tbody tr:nth-child(even) td { background: var(--qfs-doc-zebra-bg, var(--color-bg-subtle)); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.qfs-doc-lines.qfs-doc-zebra tbody tr td:first-child { border-radius: var(--qfs-doc-row-radius, 0) 0 0 var(--qfs-doc-row-radius, 0); }
+.qfs-doc-lines.qfs-doc-zebra tbody tr td:last-child { border-radius: 0 var(--qfs-doc-row-radius, 0) var(--qfs-doc-row-radius, 0) 0; }
 .qfs-doc-lines.qfs-doc-rows-none td { border-bottom: 0; }
 .qfs-doc-lines.qfs-doc-rows-none tbody tr:last-child td { border-bottom: 1px solid var(--color-border); }
 .qfs-doc-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -150,8 +175,8 @@ export const QUOTE_DOC_CSS = `
 .qfs-doc-notice p { margin: 0 0 0.5rem; }
 .qfs-doc-notice p:last-child { margin-bottom: 0; }
 .qfs-doc-notice .qfs-doc-notice-lead { font-weight: 700; }
-.qfs-doc-notice.qfs-doc-notice-panel { padding: 0.875rem 1.125rem; background: var(--qfs-doc-panel-bg, var(--color-bg-subtle)); border-left: var(--qfs-doc-rule-w, 3px) solid var(--qfs-doc-accent, var(--color-border)); border-radius: 0 var(--qfs-doc-radius, 0) var(--qfs-doc-radius, 0) 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.qfs-doc-notice.qfs-doc-notice-outline { padding: 0.875rem 1.125rem; border: 1px solid var(--qfs-doc-accent, var(--color-border)); border-radius: var(--qfs-doc-radius, 0); }
+.qfs-doc-notice.qfs-doc-notice-panel { padding: var(--qfs-doc-notice-pad, 0.875rem) calc(var(--qfs-doc-notice-pad, 0.875rem) * 1.3); background: var(--qfs-doc-panel-bg, var(--color-bg-subtle)); border-left: var(--qfs-doc-rule-w, 3px) solid var(--qfs-doc-accent, var(--color-border)); border-radius: 0 var(--qfs-doc-radius, 0) var(--qfs-doc-radius, 0) 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.qfs-doc-notice.qfs-doc-notice-outline { padding: var(--qfs-doc-notice-pad, 0.875rem) calc(var(--qfs-doc-notice-pad, 0.875rem) * 1.3); border: 1px solid var(--qfs-doc-accent, var(--color-border)); border-radius: var(--qfs-doc-radius, 0); }
 .qfs-doc-notice.qfs-doc-notice-quiet { padding: 0; color: var(--color-text-muted); font-size: var(--qfs-doc-notice-size, 0.875rem); }
 
 /* ---------------------------------------------------------------------------
@@ -164,6 +189,10 @@ export const QUOTE_DOC_CSS = `
 .qfs-doc-footer.qfs-doc-align-right { text-align: right; }
 .qfs-doc-footer .qfs-doc-contact { margin: 0 0 0.5rem; font-size: var(--qfs-doc-footer-contact-size, 0.875rem); font-weight: 700; color: var(--qfs-doc-accent, var(--color-text)); }
 .qfs-doc-footer .qfs-doc-small { margin: 0; font-size: var(--qfs-doc-footer-small-size, 0.75rem); line-height: 1.6; color: var(--color-text-muted); }
+
+/* "Page 2 of 3" in the running footer. The two spans are empty until the
+   printing browser fills them in, so this only ever says anything on a PDF. */
+.qfs-doc-pageno { margin: 0; font-size: var(--qfs-doc-pageno-size, 0.75rem); color: var(--qfs-doc-pageno-ink, var(--color-text-muted)); }
 
 /* A rule of its own, for the gaps the blocks around it do not rule themselves. */
 .qfs-doc-rule { border: 0; border-top: 1px solid var(--qfs-doc-rule-ink, var(--color-border)); }
@@ -205,6 +234,7 @@ export const QUOTE_DOC_CSS = `
   .qfs-doc-notice.qfs-doc-notice-quiet { color: #444 !important; }
   .qfs-doc-footer .qfs-doc-contact { color: var(--qfs-doc-accent, #111) !important; }
   .qfs-doc-footer .qfs-doc-small { color: #444 !important; }
+  .qfs-doc-pageno { color: var(--qfs-doc-pageno-ink, #444) !important; }
   .qfs-doc-head, .qfs-doc-lines th, .qfs-doc-lines td, .qfs-doc-grand, .qfs-doc-thumb,
   .qfs-doc-footer, .qfs-doc-rule { border-color: #ccc !important; }
   .qfs-doc-head.qfs-doc-head-accent,

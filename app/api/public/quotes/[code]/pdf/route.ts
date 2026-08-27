@@ -5,6 +5,7 @@ import { looksLikeQuoteCode, normaliseQuoteCode } from '@/modules/quote-for-shop
 import { getQuoteByCode } from '@/modules/quote-for-shop/lib/db/quotes'
 import { getQuoteConfigCached } from '@/modules/quote-for-shop/lib/config'
 import { QuotePdfUnavailableError, quotePdfFilename, renderQuotePdf } from '@/modules/quote-for-shop/lib/pdf'
+import { quoteDocumentPageSetup } from '@/modules/quote-for-shop/lib/document'
 
 // GET - the quote as a PDF. What the sticky button under the preview points at.
 //
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ cod
     // The bare document view, not the shopper's own page: same designed layout,
     // with the site chrome taken out and `print=1` so a block can drop anything
     // that only makes sense on screen.
-    const pdf = await renderQuotePdf(`/quote/${code.replace('-', '')}/view?print=1`)
+    const pdf = await renderQuotePdf(`/quote/${code.replace('-', '')}/view?print=1`, await quoteDocumentPageSetup())
     return new NextResponse(pdf as unknown as BodyInit, {
       headers: {
         'Content-Type': 'application/pdf',

@@ -4,8 +4,8 @@ import {
   QuoteDocHeader, QuoteDocCustomer, QuoteDocLines, QuoteDocTotals, QuoteDocNotes,
 } from '@/modules/quote-for-shop/components/puck/doc-parts'
 import {
-  QuoteDocStyle, QuoteDocParties, QuoteDocNotice, QuoteDocFooter, QuoteDocDivider,
-  QUOTE_DOC_SCOPE_CLASSES,
+  QuoteDocStyle, QuoteDocParties, QuoteDocFrom, QuoteDocTo, QuoteDocNotice, QuoteDocFooter,
+  QuoteDocDivider, QuoteDocPageNumber, QUOTE_DOC_SCOPE_CLASSES,
 } from '@/modules/quote-for-shop/components/puck/doc-chrome'
 import { fillTokens, quoteTokens } from '@/modules/quote-for-shop/components/puck/doc-shared'
 import { SAMPLE_QUOTE_CONTEXT } from '@/modules/quote-for-shop/lib/doc-context'
@@ -65,12 +65,15 @@ describe('quote document style scope', () => {
     ['header', renderToStaticMarkup(<QuoteDocHeader _ctx={ctx} />)],
     ['prepared for', renderToStaticMarkup(<QuoteDocCustomer _ctx={ctx} />)],
     ['parties', renderToStaticMarkup(<QuoteDocParties _ctx={ctx} showMessage="yes" />)],
+    ['from', renderToStaticMarkup(<QuoteDocFrom _ctx={ctx} />)],
+    ['to', renderToStaticMarkup(<QuoteDocTo _ctx={ctx} showMessage="yes" />)],
     ['lines', renderToStaticMarkup(<QuoteDocLines _ctx={ctx} />)],
     ['totals', renderToStaticMarkup(<QuoteDocTotals _ctx={ctx} />)],
     ['notes', renderToStaticMarkup(<QuoteDocNotes _ctx={ctx} />)],
     ['notice', renderToStaticMarkup(<QuoteDocNotice _ctx={ctx} lead="Lead" body="Body" />)],
     ['footer', renderToStaticMarkup(<QuoteDocFooter _ctx={ctx} contact="a" smallPrint="b" />)],
     ['divider', renderToStaticMarkup(<QuoteDocDivider />)],
+    ['page number', renderToStaticMarkup(<QuoteDocPageNumber _ctx={ctx} />)],
   ]
 
   it.each(blocks)('every root element of the %s block is inside the style scope', (_name, html) => {

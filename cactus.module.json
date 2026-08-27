@@ -1,6 +1,6 @@
 {
   "name": "quote-for-shop",
-  "version": "0.1.21",
+  "version": "0.1.22",
   "tablePrefix": "qfs_",
   "description": "Quotes for the Shop: either turn the whole shop into a quote request flow (Add to quote, no checkout, prices optionally withheld), or leave ordinary checkout alone and let shoppers save a cart as a quote, retrieve it later with a short code, and download it as a PDF of a layout you design yourself.",
   "requiresCoreVersion": "0.5.1336",
@@ -175,7 +175,8 @@
       "component": "quoteDocStylePuckComponent",
       "rscComponent": "quoteDocStylePuckRscComponent",
       "layoutTypes": [
-        "quoteDocument"
+        "quoteDocument",
+        "quoteDocumentFooter"
       ]
     },
     {
@@ -188,12 +189,31 @@
       ]
     },
     {
+      "type": "QuoteDocFrom",
+      "import": "./components/puck/doc-chrome",
+      "component": "quoteDocFromPuckComponent",
+      "rscComponent": "quoteDocFromPuckRscComponent",
+      "layoutTypes": [
+        "quoteDocument"
+      ]
+    },
+    {
+      "type": "QuoteDocTo",
+      "import": "./components/puck/doc-chrome",
+      "component": "quoteDocToPuckComponent",
+      "rscComponent": "quoteDocToPuckRscComponent",
+      "layoutTypes": [
+        "quoteDocument"
+      ]
+    },
+    {
       "type": "QuoteDocNotice",
       "import": "./components/puck/doc-chrome",
       "component": "quoteDocNoticePuckComponent",
       "rscComponent": "quoteDocNoticePuckRscComponent",
       "layoutTypes": [
-        "quoteDocument"
+        "quoteDocument",
+        "quoteDocumentFooter"
       ]
     },
     {
@@ -202,7 +222,8 @@
       "component": "quoteDocFooterPuckComponent",
       "rscComponent": "quoteDocFooterPuckRscComponent",
       "layoutTypes": [
-        "quoteDocument"
+        "quoteDocument",
+        "quoteDocumentFooter"
       ]
     },
     {
@@ -211,7 +232,17 @@
       "component": "quoteDocDividerPuckComponent",
       "rscComponent": "quoteDocDividerPuckRscComponent",
       "layoutTypes": [
-        "quoteDocument"
+        "quoteDocument",
+        "quoteDocumentFooter"
+      ]
+    },
+    {
+      "type": "QuoteDocPageNumber",
+      "import": "./components/puck/doc-chrome",
+      "component": "quoteDocPageNumberPuckComponent",
+      "rscComponent": "quoteDocPageNumberPuckRscComponent",
+      "layoutTypes": [
+        "quoteDocumentFooter"
       ]
     }
   ],
@@ -223,7 +254,17 @@
         "key": "quoteDocument",
         "label": "Quote document",
         "starterImport": "./lib/starterLayouts",
-        "starterExport": "quoteDocumentStarters"
+        "starterExport": "quoteDocumentStarters",
+        "pageSettingsImport": "./lib/doc-page-settings",
+        "pageSettingsExport": "quoteDocPageSettings"
+      },
+      {
+        "key": "quoteDocumentFooter",
+        "label": "Quote PDF footer",
+        "starterImport": "./lib/starterLayouts",
+        "starterExport": "quoteDocumentFooterStarters",
+        "pageSettingsImport": "./lib/doc-page-settings",
+        "pageSettingsExport": "quoteDocFooterPageSettings"
       },
       {
         "key": "quoteRequest",

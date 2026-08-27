@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import {
-  Style, FontLink, fontStyle, fontField, ptField, sizeVars, colourField, yesNo,
-  fillTokens, quoteTokens, paragraphs, useCtx, TOKEN_HINT,
+  Style, FontLink, fontStyle, fontField, sizeField, radiusField, spaceField, sizeVars, cssLength,
+  colourField, yesNo, fillTokens, quoteTokens, paragraphs, useCtx, TOKEN_HINT,
   type DocProps,
 } from '@/modules/quote-for-shop/components/puck/doc-shared'
 
@@ -35,6 +35,7 @@ import {
 // fallbacks. There is a test that fails when it drifts.
 
 export const QUOTE_DOC_SCOPE_CLASSES = [
+  'qfs-doc-pageno',
   'qfs-doc-head',
   'qfs-doc-intro',
   'qfs-doc-lead',
@@ -73,7 +74,8 @@ type StyleProps = {
   accent?: string; labelColour?: string; titleColour?: string
   tableHeadBg?: string; tableHeadInk?: string
   panelBg?: string; panelInk?: string; zebraBg?: string
-  ruleWeight?: string; corners?: string; density?: string
+  ruleWeight?: string; ruleWeightPx?: string; corners?: string; cornerRadius?: string; density?: string
+  blockGap?: string; blockGapLarge?: string
   bodyFont?: string; headingFont?: string
 }
 
@@ -100,11 +102,13 @@ export function QuoteDocStyle(props: StyleProps) {
     ['--qfs-doc-panel-bg', props.panelBg],
     ['--qfs-doc-panel-ink', props.panelInk],
     ['--qfs-doc-zebra-bg', props.zebraBg],
-    ['--qfs-doc-rule-w', RULE_WEIGHTS[props.ruleWeight ?? '']],
-    ['--qfs-doc-radius', RADII[props.corners ?? '']],
+    // The picked thickness, or an exact one where an owner asked for exactly
+    // that. The exact menu wins, and blank in it leaves the preset standing.
+    ['--qfs-doc-rule-w', cssLength(props.ruleWeightPx) ?? RULE_WEIGHTS[props.ruleWeight ?? '']],
+    ['--qfs-doc-radius', cssLength(props.cornerRadius) ?? RADII[props.corners ?? '']],
     ['--qfs-doc-row-y', density?.row],
-    ['--qfs-doc-gap', density?.gap],
-    ['--qfs-doc-gap-lg', density?.gapLg],
+    ['--qfs-doc-gap', cssLength(props.blockGap) ?? density?.gap],
+    ['--qfs-doc-gap-lg', cssLength(props.blockGapLarge) ?? density?.gapLg],
     ['--qfs-doc-body-font', props.bodyFont?.trim()],
     ['--qfs-doc-head-font', props.headingFont?.trim()],
   ])
@@ -137,16 +141,20 @@ export const quoteDocStylePuckComponent = {
       { value: 'thick', label: 'Thick' },
       { value: 'heavy', label: 'Heavy' },
     ] },
+    ruleWeightPx: spaceField('…or exactly this thick'),
     corners: { type: 'select' as const, label: 'Corners', options: [
       { value: 'square', label: 'Square' },
       { value: 'soft', label: 'Slightly rounded' },
       { value: 'round', label: 'Rounded' },
     ] },
+    cornerRadius: radiusField('…or exactly this radius'),
     density: { type: 'select' as const, label: 'Spacing', options: [
       { value: 'compact', label: 'Compact' },
       { value: 'normal', label: 'Normal' },
       { value: 'roomy', label: 'Roomy' },
     ] },
+    blockGap: spaceField('…or exactly this gap between blocks'),
+    blockGapLarge: spaceField('…and this one before the small print'),
     bodyFont: fontField,
     headingFont: {
       type: 'custom' as const,
@@ -157,7 +165,8 @@ export const quoteDocStylePuckComponent = {
   defaultProps: {
     accent: '', labelColour: '', titleColour: '',
     tableHeadBg: '', tableHeadInk: '', panelBg: '', panelInk: '', zebraBg: '',
-    ruleWeight: 'thick', corners: 'square', density: 'normal',
+    ruleWeight: 'thick', ruleWeightPx: '', corners: 'square', cornerRadius: '',
+    density: 'normal', blockGap: '', blockGapLarge: '',
     bodyFont: '', headingFont: '',
   },
   render: QuoteDocStyle,
@@ -178,7 +187,9 @@ type PartiesProps = DocProps & {
   toLabel?: string; fromLabel?: string
   showFrom?: string; showTo?: string; showRegistration?: string
   order?: string; columns?: string; showMessage?: string
-  headingPt?: number; addressPt?: number; registrationPt?: number; messagePt?: number
+  showPhone?: string; showEmail?: string
+  headingPt?: number | string; addressPt?: number | string
+  registrationPt?: number | string; messagePt?: number | string
 }
 
 export function QuoteDocParties(props: PartiesProps) {
@@ -206,8 +217,10 @@ export function QuoteDocParties(props: PartiesProps) {
       <address>
         {seller.name && <span className="qfs-doc-strong">{seller.name}</span>}
         {seller.addressLines.map((line, i) => <span key={i}>{line}</span>)}
-        {seller.email && <span>{seller.email}</span>}
-        {seller.phone && <span>{seller.phone}</span>}
+        {props.showEmail !== 'no' && seller.email && <span>{seller.email}</span>}
+        {/* On by default because it always printed; a switch because plenty of
+            trades would rather a customer emailed. */}
+        {props.showPhone !== 'no' && seller.phone && <span>{seller.phone}</span>}
       </address>
       {props.showRegistration === 'yes' && (seller.vatNumber || seller.companyNumber) && (
         <div className="qfs-doc-reg">
@@ -277,17 +290,19 @@ export const quoteDocPartiesPuckComponent = {
     toLabel: { type: 'text' as const, label: '"Quote for" heading' },
     showFrom: { type: 'select' as const, label: 'Your own details (from Shop settings)', options: yesNo },
     fromLabel: { type: 'text' as const, label: '"From" heading' },
+    showEmail: { type: 'select' as const, label: 'Your email address', options: yesNo },
+    showPhone: { type: 'select' as const, label: 'Your telephone number', options: yesNo },
     showRegistration: { type: 'select' as const, label: 'VAT and company numbers', options: yesNo },
     showMessage: { type: 'select' as const, label: 'What the customer wrote', options: yesNo },
-    headingPt: ptField('Heading size in points'),
-    addressPt: ptField('Address size in points'),
-    registrationPt: ptField('VAT and company number size in points'),
-    messagePt: ptField('Size in points of what the customer wrote'),
+    headingPt: sizeField('Heading size'),
+    addressPt: sizeField('Address size'),
+    registrationPt: sizeField('VAT and company number size'),
+    messagePt: sizeField('Size of what the customer wrote'),
   },
   defaultProps: {
     fontFamily: '', order: 'to-first', columns: '2',
     showTo: 'yes', toLabel: 'Quote for', showFrom: 'yes', fromLabel: 'From',
-    showRegistration: 'no', showMessage: 'no',
+    showEmail: 'yes', showPhone: 'yes', showRegistration: 'no', showMessage: 'no',
   },
   render: QuoteDocParties,
 }
@@ -305,8 +320,9 @@ const NOTICE_STYLES = [
 ]
 
 type NoticeProps = DocProps & {
+  radius?: string; padding?: string
   lead?: string; body?: string; panelStyle?: string; hideWhenEmpty?: string
-  bodyPt?: number
+  bodyPt?: number | string
 }
 
 export function QuoteDocNotice(props: NoticeProps) {
@@ -327,7 +343,12 @@ export function QuoteDocNotice(props: NoticeProps) {
       <FontLink family={props.fontFamily} />
       <section
         className={`qfs-doc-notice qfs-doc-notice-${variant}`}
-        style={{ ...font, ...sizeVars({ '--qfs-doc-notice-size': props.bodyPt }) }}
+        style={{
+          ...font,
+          ...sizeVars({ '--qfs-doc-notice-size': props.bodyPt }),
+          ...(cssLength(props.radius) ? { '--qfs-doc-radius': cssLength(props.radius)! } : {}),
+          ...(cssLength(props.padding) ? { '--qfs-doc-notice-pad': cssLength(props.padding)! } : {}),
+        }}
       >
         {/* The lead runs into the first paragraph rather than sitting above it -
             "This quote holds until 6 May. Prices are the same ones on the site."
@@ -358,12 +379,14 @@ export const quoteDocNoticePuckComponent = {
       { value: 'no', label: 'Print the empty panel' },
     ] },
     fontFamily: fontField,
-    bodyPt: ptField('Text size in points'),
+    bodyPt: sizeField('Text size'),
+    radius: radiusField('Corners'),
+    padding: spaceField('Space inside the panel'),
   },
   defaultProps: {
     lead: 'This quote holds until {{VALID_UNTIL}}.',
     body: 'View it again at any time at {{QUOTE_URL}}, or reply to us and we will turn it into an order.',
-    panelStyle: 'panel', hideWhenEmpty: 'yes', fontFamily: '',
+    panelStyle: 'panel', hideWhenEmpty: 'yes', fontFamily: '', radius: '', padding: '',
   },
   render: QuoteDocNotice,
 }
@@ -375,7 +398,7 @@ export const quoteDocNoticePuckRscComponent = { ...quoteDocNoticePuckComponent, 
 
 type FooterProps = DocProps & {
   contact?: string; smallPrint?: string; align?: string; rule?: string
-  contactPt?: number; smallPrintPt?: number
+  contactPt?: number | string; smallPrintPt?: number | string
 }
 
 export function QuoteDocFooter(props: FooterProps) {
@@ -432,8 +455,8 @@ export const quoteDocFooterPuckComponent = {
     ] },
     rule: { type: 'select' as const, label: 'Rule above it', options: yesNo },
     fontFamily: fontField,
-    contactPt: ptField('Contact line size in points'),
-    smallPrintPt: ptField('Small print size in points'),
+    contactPt: sizeField('Contact line size'),
+    smallPrintPt: sizeField('Small print size'),
   },
   defaultProps: {
     contact: '{{SITE_URL}} · {{BUSINESS_EMAIL}}',
@@ -456,7 +479,8 @@ const SPACES: Record<string, string> = {
 }
 
 type DividerProps = {
-  weight?: string; colour?: string; width?: string; spaceAbove?: string; spaceBelow?: string
+  weight?: string; weightPx?: string; colour?: string; width?: string
+  spaceAbove?: string; spaceBelow?: string; spaceAbovePx?: string; spaceBelowPx?: string
 }
 
 export function QuoteDocDivider(props: DividerProps) {
@@ -468,9 +492,9 @@ export function QuoteDocDivider(props: DividerProps) {
       <hr
         className={`qfs-doc-rule${width}`}
         style={{
-          borderTopWidth: RULE_WEIGHTS[props.weight ?? 'hairline'] ?? '1px',
-          marginTop: SPACES[props.spaceAbove ?? 'medium'] ?? SPACES.medium,
-          marginBottom: SPACES[props.spaceBelow ?? 'medium'] ?? SPACES.medium,
+          borderTopWidth: cssLength(props.weightPx) ?? RULE_WEIGHTS[props.weight ?? 'hairline'] ?? '1px',
+          marginTop: cssLength(props.spaceAbovePx) ?? SPACES[props.spaceAbove ?? 'medium'] ?? SPACES.medium,
+          marginBottom: cssLength(props.spaceBelowPx) ?? SPACES[props.spaceBelow ?? 'medium'] ?? SPACES.medium,
           // The colour goes on the custom property the stylesheet reads, NOT on
           // border-top-color. The print rules say !important to force a dark-mode
           // page back to ink on paper, and !important beats an inline
@@ -492,6 +516,7 @@ export const quoteDocDividerPuckComponent = {
       { value: 'thick', label: 'Thick' },
       { value: 'heavy', label: 'Heavy' },
     ] },
+    weightPx: spaceField('…or exactly this thick'),
     colour: colourField('Colour (blank uses the document border)'),
     width: { type: 'select' as const, label: 'Width', options: [
       { value: 'full', label: 'Right across' },
@@ -504,14 +529,246 @@ export const quoteDocDividerPuckComponent = {
       { value: 'medium', label: 'Medium' },
       { value: 'large', label: 'Large' },
     ] },
+    spaceAbovePx: spaceField('…or exactly this much above'),
     spaceBelow: { type: 'select' as const, label: 'Space below', options: [
       { value: 'none', label: 'None' },
       { value: 'small', label: 'Small' },
       { value: 'medium', label: 'Medium' },
       { value: 'large', label: 'Large' },
     ] },
+    spaceBelowPx: spaceField('…or exactly this much below'),
   },
-  defaultProps: { weight: 'hairline', colour: '', width: 'full', spaceAbove: 'medium', spaceBelow: 'medium' },
+  defaultProps: {
+    weight: 'hairline', weightPx: '', colour: '', width: 'full',
+    spaceAbove: 'medium', spaceAbovePx: '', spaceBelow: 'medium', spaceBelowPx: '',
+  },
   render: QuoteDocDivider,
 }
 export const quoteDocDividerPuckRscComponent = { ...quoteDocDividerPuckComponent, render: QuoteDocDivider }
+
+// ---------------------------------------------------------------------------
+// From, and To, as blocks of their own
+// ---------------------------------------------------------------------------
+//
+// The same two columns the block above draws together, drawn one at a time.
+//
+// One block that drew both was fine until an owner wanted them anywhere other
+// than side by side and equal - the seller at the top under the letterhead, the
+// customer down beside the dates, different sizes on each. None of that is
+// reachable through a block that owns both columns and lays them out itself.
+//
+// The combined block stays exactly as it was, for every layout already using it.
+
+type OnePartyProps = DocProps & {
+  heading?: string; align?: string
+  showEmail?: string; showPhone?: string; showRegistration?: string
+  headingPt?: number | string; addressPt?: number | string; registrationPt?: number | string
+}
+
+const PARTY_ALIGN: Record<string, string> = {
+  left: '',
+  centre: ' qfs-doc-party-centre',
+  right: ' qfs-doc-party-right',
+}
+
+function partySizes(props: OnePartyProps) {
+  return sizeVars({
+    '--qfs-doc-h2-size': props.headingPt,
+    '--qfs-doc-party-size': props.addressPt,
+    '--qfs-doc-reg-size': props.registrationPt,
+  })
+}
+
+export function QuoteDocFrom(props: OnePartyProps) {
+  const { site } = useCtx(props)
+  const font = fontStyle(props)
+  const seller = site.seller
+  if (!seller || (!seller.name && seller.addressLines.length === 0)) return null
+  return (
+    <>
+      <Style />
+      <FontLink family={props.fontFamily} />
+      <section
+        className={`qfs-doc-parties qfs-doc-party-one${PARTY_ALIGN[props.align ?? 'left'] ?? ''}`}
+        style={{ ...font, ...partySizes(props) }}
+      >
+        <div className="qfs-doc-party">
+          <h2 className="qfs-doc-h2 qfs-doc-h2-caps" style={font}>{props.heading?.trim() || 'From'}</h2>
+          <address>
+            {seller.name && <span className="qfs-doc-strong">{seller.name}</span>}
+            {seller.addressLines.map((line, i) => <span key={i}>{line}</span>)}
+            {props.showEmail !== 'no' && seller.email && <span>{seller.email}</span>}
+            {props.showPhone !== 'no' && seller.phone && <span>{seller.phone}</span>}
+          </address>
+          {props.showRegistration === 'yes' && (seller.vatNumber || seller.companyNumber) && (
+            <div className="qfs-doc-reg">
+              {seller.vatNumber && <span>VAT registration {seller.vatNumber}</span>}
+              {seller.companyNumber && <span>Company number {seller.companyNumber}</span>}
+            </div>
+          )}
+        </div>
+      </section>
+    </>
+  )
+}
+
+const ONE_PARTY_SIZE_FIELDS = {
+  headingPt: sizeField('Heading size'),
+  addressPt: sizeField('Address size'),
+  registrationPt: sizeField('VAT and company number size'),
+}
+
+const ONE_PARTY_ALIGN_FIELD = {
+  type: 'select' as const,
+  label: 'Sits',
+  options: [
+    { value: 'left', label: 'Left' },
+    { value: 'centre', label: 'Centred' },
+    { value: 'right', label: 'Right' },
+  ],
+}
+
+export const quoteDocFromPuckComponent = {
+  label: 'Quote: From',
+  fields: {
+    heading: { type: 'text' as const, label: 'Heading' },
+    fontFamily: fontField,
+    showEmail: { type: 'select' as const, label: 'Email address', options: yesNo },
+    showPhone: { type: 'select' as const, label: 'Telephone number', options: yesNo },
+    showRegistration: { type: 'select' as const, label: 'VAT and company numbers', options: yesNo },
+    align: ONE_PARTY_ALIGN_FIELD,
+    ...ONE_PARTY_SIZE_FIELDS,
+  },
+  defaultProps: {
+    heading: 'From', fontFamily: '', showEmail: 'yes', showPhone: 'yes', showRegistration: 'yes', align: 'left',
+  },
+  render: QuoteDocFrom,
+}
+export const quoteDocFromPuckRscComponent = { ...quoteDocFromPuckComponent, render: QuoteDocFrom }
+
+type ToProps = OnePartyProps & { showMessage?: string; messagePt?: number | string }
+
+export function QuoteDocTo(props: ToProps) {
+  const { quote } = useCtx(props)
+  const font = fontStyle(props)
+  const who = [quote.company, quote.customerName].filter(Boolean)
+  const message = props.showMessage === 'yes' && quote.message ? quote.message : ''
+  // A saved basket often has no name attached at all - giving one is optional -
+  // and a block with nothing in it should take up no room on the page.
+  if (who.length === 0 && !message) return null
+  return (
+    <>
+      <Style />
+      <FontLink family={props.fontFamily} />
+      {who.length > 0 && (
+        <section
+          className={`qfs-doc-parties qfs-doc-party-one${PARTY_ALIGN[props.align ?? 'left'] ?? ''}`}
+          style={{ ...font, ...partySizes(props) }}
+        >
+          <div className="qfs-doc-party">
+            <h2 className="qfs-doc-h2 qfs-doc-h2-caps" style={font}>{props.heading?.trim() || 'Quote for'}</h2>
+            <address>
+              {who.map((line, i) => (
+                <span key={line} className={i === 0 ? 'qfs-doc-strong' : undefined}>{line}</span>
+              ))}
+            </address>
+          </div>
+        </section>
+      )}
+      {/* A sibling rather than a child, so it carries its own size property - a
+          custom property reaches its own subtree and nothing else. */}
+      {message && (
+        <blockquote
+          className="qfs-doc-quote"
+          style={{ ...font, ...sizeVars({ '--qfs-doc-message-size': props.messagePt }) }}
+        >
+          {message}
+        </blockquote>
+      )}
+    </>
+  )
+}
+
+export const quoteDocToPuckComponent = {
+  label: 'Quote: To',
+  fields: {
+    heading: { type: 'text' as const, label: 'Heading' },
+    fontFamily: fontField,
+    showMessage: { type: 'select' as const, label: 'What the customer wrote', options: yesNo },
+    align: ONE_PARTY_ALIGN_FIELD,
+    ...ONE_PARTY_SIZE_FIELDS,
+    messagePt: sizeField('Size of what the customer wrote'),
+  },
+  defaultProps: { heading: 'Quote for', fontFamily: '', showMessage: 'no', align: 'left' },
+  render: QuoteDocTo,
+}
+export const quoteDocToPuckRscComponent = { ...quoteDocToPuckComponent, render: QuoteDocTo }
+
+// ---------------------------------------------------------------------------
+// Page number
+// ---------------------------------------------------------------------------
+//
+// "Page 2 of 3", for the running footer that repeats at the foot of every page
+// of the PDF (see lib/doc-page-settings.tsx and lib/pdf.ts).
+//
+// It works by a trick of the printing browser rather than by anything this
+// module counts. Chrome fills in the text of any element carrying the classes
+// `pageNumber` and `totalPages` when it draws a running header or footer, so the
+// block emits two empty spans and lets the browser do the arithmetic - which is
+// the only place it can be done, since nothing on the server knows how many
+// pages a document turned into until it has been printed.
+
+type PageNumberProps = DocProps & {
+  text?: string; align?: string; sizePt?: number | string; colour?: string
+}
+
+const PAGE_TOKEN_RE = /(\{\{\s*(?:PAGE|PAGES)\s*\}\})/
+
+export function QuoteDocPageNumber(props: PageNumberProps) {
+  const ctx = useCtx(props)
+  const font = fontStyle(props)
+  const text = fillTokens(props.text?.trim() || 'Page {{PAGE}} of {{PAGES}}', quoteTokens(ctx))
+  const align = props.align === 'left' || props.align === 'right' ? props.align : 'center'
+  const colour = props.colour?.trim()
+  if (!text) return null
+
+  return (
+    <>
+      <Style />
+      <FontLink family={props.fontFamily} />
+      <p
+        className="qfs-doc-pageno"
+        style={{
+          ...font,
+          textAlign: align,
+          ...sizeVars({ '--qfs-doc-pageno-size': props.sizePt }),
+          ...(colour ? { '--qfs-doc-pageno-ink': colour } : {}),
+        } as CSSProperties}
+      >
+        {text.split(PAGE_TOKEN_RE).map((part, i) => {
+          if (/^\{\{\s*PAGE\s*\}\}$/.test(part)) return <span className="pageNumber" key={i} />
+          if (/^\{\{\s*PAGES\s*\}\}$/.test(part)) return <span className="totalPages" key={i} />
+          return <span key={i}>{part}</span>
+        })}
+      </p>
+    </>
+  )
+}
+
+export const quoteDocPageNumberPuckComponent = {
+  label: 'Quote: Page number',
+  fields: {
+    text: { type: 'text' as const, label: `Reads. {{PAGE}} and {{PAGES}} are filled in by the printer. ${TOKEN_HINT}` },
+    align: { type: 'select' as const, label: 'Sits', options: [
+      { value: 'center', label: 'Centred' },
+      { value: 'left', label: 'Left' },
+      { value: 'right', label: 'Right' },
+    ] },
+    fontFamily: fontField,
+    sizePt: sizeField('Size'),
+    colour: colourField('Colour'),
+  },
+  defaultProps: { text: 'Page {{PAGE}} of {{PAGES}}', align: 'center', fontFamily: '', colour: '' },
+  render: QuoteDocPageNumber,
+}
+export const quoteDocPageNumberPuckRscComponent = { ...quoteDocPageNumberPuckComponent, render: QuoteDocPageNumber }

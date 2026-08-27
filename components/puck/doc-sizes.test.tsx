@@ -4,7 +4,7 @@ import {
   QuoteDocHeader, QuoteDocCustomer, QuoteDocLines, QuoteDocTotals, QuoteDocNotes,
 } from '@/modules/quote-for-shop/components/puck/doc-parts'
 import {
-  QuoteDocParties, QuoteDocNotice, QuoteDocFooter,
+  QuoteDocParties, QuoteDocNotice, QuoteDocFooter, QuoteDocPageNumber,
 } from '@/modules/quote-for-shop/components/puck/doc-chrome'
 import { sizeVars } from '@/modules/quote-for-shop/components/puck/doc-shared'
 import { SAMPLE_QUOTE_CONTEXT } from '@/modules/quote-for-shop/lib/doc-context'
@@ -44,6 +44,9 @@ const RENDERED = [
   // they are given their wording here rather than left to return null.
   renderToStaticMarkup(<QuoteDocNotice _ctx={ctx} lead="Holds until" body="Reply and we will turn it into an order." bodyPt={10} />),
   renderToStaticMarkup(<QuoteDocFooter _ctx={ctx} contact="example.com" smallPrint="Company number 01234567." contactPt={9} smallPrintPt={7} />),
+  // Only ever drawn into the PDF's running footer, but it is a block of this
+  // document all the same and its size box has to reach the stylesheet.
+  renderToStaticMarkup(<QuoteDocPageNumber _ctx={ctx} text="Page {{PAGE}} of {{PAGES}}" sizePt={8} />),
 ].join('\n')
 
 /** Custom properties the blocks actually wrote onto the document. */

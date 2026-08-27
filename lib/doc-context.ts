@@ -54,8 +54,11 @@ const DOC_PART_TYPES = new Set([
   'QuoteDocTotals',
   'QuoteDocNotes',
   'QuoteDocParties',
+  'QuoteDocFrom',
+  'QuoteDocTo',
   'QuoteDocNotice',
   'QuoteDocFooter',
+  'QuoteDocPageNumber',
 ])
 
 function attach(blocks: unknown[], ctx: QuoteDocContext): void {

@@ -8,6 +8,7 @@ import { buildFontHref, buildTokenStyles, type DesignTokens } from '@/lib/design
 import { getShopConfigCached } from '@/modules/shop/lib/config'
 import { getQuoteConfigCached } from '@/modules/quote-for-shop/lib/config'
 import { injectQuoteDocContext, type QuoteDocContext } from '@/modules/quote-for-shop/lib/doc-context'
+import { docPageSetupFromLayout, type DocPageSetup } from '@/modules/quote-for-shop/lib/doc-page-settings'
 import type { PublicQuote, Quote } from '@/modules/quote-for-shop/lib/types'
 
 // Rendering the quote document. One layout, three surfaces:
@@ -111,3 +112,37 @@ export async function renderQuoteDocument(ctx: QuoteDocContext): Promise<ReactNo
 // references, and react-dom/server has no client manifest to resolve those against
 // in a route handler. The bare document is a PAGE now
 // (app/public/quote/[code]/view/page.tsx), which hands the rendering back to Next.
+
+// ---------------------------------------------------------------------------
+// The running footer, and the sheet it is printed on
+// ---------------------------------------------------------------------------
+//
+// A document layout says what goes ON the page. Two things it cannot say, and
+// both of them belong to the sheet rather than to any block:
+//
+//  - the paper, its margins and the scale everything is printed at. Those are
+//    the layout's page settings, read back out here for the browser that makes
+//    the PDF.
+//  - what repeats at the FOOT OF EVERY PAGE. A footer block on the document
+//    itself is printed once, after the last line - right on a one-page quote and
+//    emphatically wrong on a five-page one, where page three ends mid-table with
+//    nothing to say whose quote it is. So the repeating footer is a layout of
+//    its own, `quoteDocumentFooter`, lifted out of the printed page and handed
+//    to the browser as a running footer.
+
+/** The paper, margins and scale the quote layout asks to be printed on. */
+export async function quoteDocumentPageSetup(): Promise<DocPageSetup> {
+  const layout = await resolveThemeLayout('quoteDocument', { moduleName: 'quote-for-shop' })
+  return docPageSetupFromLayout(layout?.builderData ?? null)
+}
+
+/** The PDF footer layout as a React tree, or null when nobody has published one
+ *  - which is every shop until somebody makes one. */
+export async function renderQuoteRunningFooter(ctx: QuoteDocContext): Promise<ReactNode | null> {
+  const layout = await resolveThemeLayout('quoteDocumentFooter', { moduleName: 'quote-for-shop' })
+  const source = layout?.builderData as Data | undefined
+  if (!source) return null
+  const { getModuleLayoutPuckRscConfig } = await import('@/lib/puck/config.rsc')
+  const data = injectQuoteDocContext(source, ctx)
+  return <Render config={getModuleLayoutPuckRscConfig('quoteDocumentFooter') as any} data={data as Data} />
+}
