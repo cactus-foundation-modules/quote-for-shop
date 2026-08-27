@@ -5,7 +5,7 @@ import {
 } from '@/modules/quote-for-shop/components/puck/doc-parts'
 import {
   QuoteDocStyle, QuoteDocParties, QuoteDocFrom, QuoteDocTo, QuoteDocNotice, QuoteDocFooter,
-  QuoteDocDivider, QuoteDocPageNumber, QUOTE_DOC_SCOPE_CLASSES,
+  QuoteDocDivider, QUOTE_DOC_SCOPE_CLASSES,
 } from '@/modules/quote-for-shop/components/puck/doc-chrome'
 import { fillTokens, quoteTokens } from '@/modules/quote-for-shop/components/puck/doc-shared'
 import { SAMPLE_QUOTE_CONTEXT } from '@/modules/quote-for-shop/lib/doc-context'
@@ -73,7 +73,6 @@ describe('quote document style scope', () => {
     ['notice', renderToStaticMarkup(<QuoteDocNotice _ctx={ctx} lead="Lead" body="Body" />)],
     ['footer', renderToStaticMarkup(<QuoteDocFooter _ctx={ctx} contact="a" smallPrint="b" />)],
     ['divider', renderToStaticMarkup(<QuoteDocDivider />)],
-    ['page number', renderToStaticMarkup(<QuoteDocPageNumber _ctx={ctx} />)],
   ]
 
   it.each(blocks)('every root element of the %s block is inside the style scope', (_name, html) => {

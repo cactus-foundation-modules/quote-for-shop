@@ -35,7 +35,6 @@ import {
 // fallbacks. There is a test that fails when it drifts.
 
 export const QUOTE_DOC_SCOPE_CLASSES = [
-  'qfs-doc-pageno',
   'qfs-doc-head',
   'qfs-doc-intro',
   'qfs-doc-lead',
@@ -703,72 +702,3 @@ export const quoteDocToPuckComponent = {
   render: QuoteDocTo,
 }
 export const quoteDocToPuckRscComponent = { ...quoteDocToPuckComponent, render: QuoteDocTo }
-
-// ---------------------------------------------------------------------------
-// Page number
-// ---------------------------------------------------------------------------
-//
-// "Page 2 of 3", for the running footer that repeats at the foot of every page
-// of the PDF (see lib/doc-page-settings.tsx and lib/pdf.ts).
-//
-// It works by a trick of the printing browser rather than by anything this
-// module counts. Chrome fills in the text of any element carrying the classes
-// `pageNumber` and `totalPages` when it draws a running header or footer, so the
-// block emits two empty spans and lets the browser do the arithmetic - which is
-// the only place it can be done, since nothing on the server knows how many
-// pages a document turned into until it has been printed.
-
-type PageNumberProps = DocProps & {
-  text?: string; align?: string; sizePt?: number | string; colour?: string
-}
-
-const PAGE_TOKEN_RE = /(\{\{\s*(?:PAGE|PAGES)\s*\}\})/
-
-export function QuoteDocPageNumber(props: PageNumberProps) {
-  const ctx = useCtx(props)
-  const font = fontStyle(props)
-  const text = fillTokens(props.text?.trim() || 'Page {{PAGE}} of {{PAGES}}', quoteTokens(ctx))
-  const align = props.align === 'left' || props.align === 'right' ? props.align : 'center'
-  const colour = props.colour?.trim()
-  if (!text) return null
-
-  return (
-    <>
-      <Style />
-      <FontLink family={props.fontFamily} />
-      <p
-        className="qfs-doc-pageno"
-        style={{
-          ...font,
-          textAlign: align,
-          ...sizeVars({ '--qfs-doc-pageno-size': props.sizePt }),
-          ...(colour ? { '--qfs-doc-pageno-ink': colour } : {}),
-        } as CSSProperties}
-      >
-        {text.split(PAGE_TOKEN_RE).map((part, i) => {
-          if (/^\{\{\s*PAGE\s*\}\}$/.test(part)) return <span className="pageNumber" key={i} />
-          if (/^\{\{\s*PAGES\s*\}\}$/.test(part)) return <span className="totalPages" key={i} />
-          return <span key={i}>{part}</span>
-        })}
-      </p>
-    </>
-  )
-}
-
-export const quoteDocPageNumberPuckComponent = {
-  label: 'Quote: Page number',
-  fields: {
-    text: { type: 'text' as const, label: `Reads. {{PAGE}} and {{PAGES}} are filled in by the printer. ${TOKEN_HINT}` },
-    align: { type: 'select' as const, label: 'Sits', options: [
-      { value: 'center', label: 'Centred' },
-      { value: 'left', label: 'Left' },
-      { value: 'right', label: 'Right' },
-    ] },
-    fontFamily: fontField,
-    sizePt: sizeField('Size'),
-    colour: colourField('Colour'),
-  },
-  defaultProps: { text: 'Page {{PAGE}} of {{PAGES}}', align: 'center', fontFamily: '', colour: '' },
-  render: QuoteDocPageNumber,
-}
-export const quoteDocPageNumberPuckRscComponent = { ...quoteDocPageNumberPuckComponent, render: QuoteDocPageNumber }

@@ -9,6 +9,9 @@ import { getShopConfigCached } from '@/modules/shop/lib/config'
 import { getQuoteConfigCached } from '@/modules/quote-for-shop/lib/config'
 import { injectQuoteDocContext, type QuoteDocContext } from '@/modules/quote-for-shop/lib/doc-context'
 import { docPageSetupFromLayout, type DocPageSetup } from '@/modules/quote-for-shop/lib/doc-page-settings'
+import { renderDocumentRunningFooter } from '@/modules/shop/lib/invoice-document'
+import type { InvoiceDocContext } from '@/modules/shop/lib/invoice-doc-context'
+import type { ShpInvoice } from '@/modules/shop/lib/types'
 import type { PublicQuote, Quote } from '@/modules/quote-for-shop/lib/types'
 
 // Rendering the quote document. One layout, three surfaces:
@@ -114,21 +117,29 @@ export async function renderQuoteDocument(ctx: QuoteDocContext): Promise<ReactNo
 // (app/public/quote/[code]/view/page.tsx), which hands the rendering back to Next.
 
 // ---------------------------------------------------------------------------
-// The running footer, and the sheet it is printed on
+// The sheet the quote is printed on, and its footer
 // ---------------------------------------------------------------------------
 //
-// A document layout says what goes ON the page. Two things it cannot say, and
-// both of them belong to the sheet rather than to any block:
+// The paper, margins and scale are this module's own page settings, read back
+// out here for the browser that makes the PDF.
 //
-//  - the paper, its margins and the scale everything is printed at. Those are
-//    the layout's page settings, read back out here for the browser that makes
-//    the PDF.
-//  - what repeats at the FOOT OF EVERY PAGE. A footer block on the document
-//    itself is printed once, after the last line - right on a one-page quote and
-//    emphatically wrong on a five-page one, where page three ends mid-table with
-//    nothing to say whose quote it is. So the repeating footer is a layout of
-//    its own, `quoteDocumentFooter`, lifted out of the printed page and handed
-//    to the browser as a running footer.
+// The running footer is NOT this module's own. A shop's paperwork - the
+// invoice, the credit note, the proforma and the quote it started as - is one
+// folder on somebody's desk, and a footer designed once belongs on all of it.
+// So there is exactly one footer layout type, `shopDocumentFooter`, owned by
+// the shop module (see modules/shop/lib/invoice-document.tsx), and this module
+// reuses it rather than keeping a second copy of the same idea. Quote already
+// depends on shop for its trading identity (`loadQuoteDocContext` above reads
+// Shop settings for exactly this reason), so reaching into its render path for
+// the footer is the same dependency, not a new one.
+//
+// The shop's footer renderer wants an `InvoiceDocContext`; a quote has no
+// invoice, so `quoteAsDocFooterContext` builds the smallest stand-in that gets
+// the footer's own blocks (contact line, small print, page number, rule) what
+// they read - the trading identity and this document's own number - and
+// nothing more. The line items, totals and dates a real invoice carries are
+// never touched by anything the footer can hold, so they are left as blanks
+// rather than invented.
 
 /** The paper, margins and scale the quote layout asks to be printed on. */
 export async function quoteDocumentPageSetup(): Promise<DocPageSetup> {
@@ -136,13 +147,34 @@ export async function quoteDocumentPageSetup(): Promise<DocPageSetup> {
   return docPageSetupFromLayout(layout?.builderData ?? null)
 }
 
-/** The PDF footer layout as a React tree, or null when nobody has published one
- *  - which is every shop until somebody makes one. */
+/** A quote, in the shape the shop's shared footer blocks read. Everything a
+ *  footer cannot show - lines, totals, dates, a customer - is left blank; only
+ *  the trading identity and the document's own number are real. */
+function quoteAsDocFooterContext(ctx: QuoteDocContext): InvoiceDocContext {
+  const seller = ctx.site.seller
+  const invoice: ShpInvoice = {
+    id: 'quote', orderId: 'quote', orderNumber: '', invoiceNumber: ctx.quote.quoteNumber,
+    status: 'ISSUED', issuedAt: new Date(0), taxPointDate: '', dueDate: null,
+    currency: '', currencySymbol: '', taxMode: 'EXCLUSIVE',
+    subtotal: '0', discountAmount: '0', shippingAmount: '0', taxAmount: '0', total: '0',
+    seller: {
+      name: seller?.name ?? '', addressLines: seller?.addressLines ?? [],
+      vatNumber: seller?.vatNumber ?? '', companyNumber: seller?.companyNumber ?? '',
+      email: seller?.email ?? '', phone: seller?.phone ?? '',
+      siteName: ctx.site.name, siteUrl: ctx.site.url, logoUrl: ctx.site.logoUrl,
+    },
+    customer: { name: '', company: '', email: '', phone: '', billingAddress: [], shippingAddress: [] },
+    lines: [],
+    taxBreakdown: [],
+    wording: { heading: '', intro: '', taxLabel: '', paymentDetails: '', terms: '', footer: '' },
+    issuedBy: 'AUTO', issueTrigger: null, createdByUserId: null, sinkResults: [],
+    voidedAt: null, voidReason: null, createdAt: new Date(0), updatedAt: new Date(0),
+  }
+  return { invoice, print: ctx.print }
+}
+
+/** The shop's shared PDF footer, rendered for this quote - or null when nobody
+ *  has published one, which is every shop until somebody makes one. */
 export async function renderQuoteRunningFooter(ctx: QuoteDocContext): Promise<ReactNode | null> {
-  const layout = await resolveThemeLayout('quoteDocumentFooter', { moduleName: 'quote-for-shop' })
-  const source = layout?.builderData as Data | undefined
-  if (!source) return null
-  const { getModuleLayoutPuckRscConfig } = await import('@/lib/puck/config.rsc')
-  const data = injectQuoteDocContext(source, ctx)
-  return <Render config={getModuleLayoutPuckRscConfig('quoteDocumentFooter') as any} data={data as Data} />
+  return renderDocumentRunningFooter(quoteAsDocFooterContext(ctx))
 }

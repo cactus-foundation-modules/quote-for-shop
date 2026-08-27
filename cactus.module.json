@@ -1,6 +1,6 @@
 {
   "name": "quote-for-shop",
-  "version": "0.1.22",
+  "version": "0.1.23",
   "tablePrefix": "qfs_",
   "description": "Quotes for the Shop: either turn the whole shop into a quote request flow (Add to quote, no checkout, prices optionally withheld), or leave ordinary checkout alone and let shoppers save a cart as a quote, retrieve it later with a short code, and download it as a PDF of a layout you design yourself.",
   "requiresCoreVersion": "0.5.1336",
@@ -175,8 +175,7 @@
       "component": "quoteDocStylePuckComponent",
       "rscComponent": "quoteDocStylePuckRscComponent",
       "layoutTypes": [
-        "quoteDocument",
-        "quoteDocumentFooter"
+        "quoteDocument"
       ]
     },
     {
@@ -212,8 +211,7 @@
       "component": "quoteDocNoticePuckComponent",
       "rscComponent": "quoteDocNoticePuckRscComponent",
       "layoutTypes": [
-        "quoteDocument",
-        "quoteDocumentFooter"
+        "quoteDocument"
       ]
     },
     {
@@ -222,8 +220,7 @@
       "component": "quoteDocFooterPuckComponent",
       "rscComponent": "quoteDocFooterPuckRscComponent",
       "layoutTypes": [
-        "quoteDocument",
-        "quoteDocumentFooter"
+        "quoteDocument"
       ]
     },
     {
@@ -232,17 +229,7 @@
       "component": "quoteDocDividerPuckComponent",
       "rscComponent": "quoteDocDividerPuckRscComponent",
       "layoutTypes": [
-        "quoteDocument",
-        "quoteDocumentFooter"
-      ]
-    },
-    {
-      "type": "QuoteDocPageNumber",
-      "import": "./components/puck/doc-chrome",
-      "component": "quoteDocPageNumberPuckComponent",
-      "rscComponent": "quoteDocPageNumberPuckRscComponent",
-      "layoutTypes": [
-        "quoteDocumentFooter"
+        "quoteDocument"
       ]
     }
   ],
@@ -257,14 +244,6 @@
         "starterExport": "quoteDocumentStarters",
         "pageSettingsImport": "./lib/doc-page-settings",
         "pageSettingsExport": "quoteDocPageSettings"
-      },
-      {
-        "key": "quoteDocumentFooter",
-        "label": "Quote PDF footer",
-        "starterImport": "./lib/starterLayouts",
-        "starterExport": "quoteDocumentFooterStarters",
-        "pageSettingsImport": "./lib/doc-page-settings",
-        "pageSettingsExport": "quoteDocFooterPageSettings"
       },
       {
         "key": "quoteRequest",

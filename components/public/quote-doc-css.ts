@@ -190,10 +190,6 @@ export const QUOTE_DOC_CSS = `
 .qfs-doc-footer .qfs-doc-contact { margin: 0 0 0.5rem; font-size: var(--qfs-doc-footer-contact-size, 0.875rem); font-weight: 700; color: var(--qfs-doc-accent, var(--color-text)); }
 .qfs-doc-footer .qfs-doc-small { margin: 0; font-size: var(--qfs-doc-footer-small-size, 0.75rem); line-height: 1.6; color: var(--color-text-muted); }
 
-/* "Page 2 of 3" in the running footer. The two spans are empty until the
-   printing browser fills them in, so this only ever says anything on a PDF. */
-.qfs-doc-pageno { margin: 0; font-size: var(--qfs-doc-pageno-size, 0.75rem); color: var(--qfs-doc-pageno-ink, var(--color-text-muted)); }
-
 /* A rule of its own, for the gaps the blocks around it do not rule themselves. */
 .qfs-doc-rule { border: 0; border-top: 1px solid var(--qfs-doc-rule-ink, var(--color-border)); }
 .qfs-doc-rule.qfs-doc-rule-short { max-width: 6rem; margin-right: auto; }
@@ -234,7 +230,6 @@ export const QUOTE_DOC_CSS = `
   .qfs-doc-notice.qfs-doc-notice-quiet { color: #444 !important; }
   .qfs-doc-footer .qfs-doc-contact { color: var(--qfs-doc-accent, #111) !important; }
   .qfs-doc-footer .qfs-doc-small { color: #444 !important; }
-  .qfs-doc-pageno { color: var(--qfs-doc-pageno-ink, #444) !important; }
   .qfs-doc-head, .qfs-doc-lines th, .qfs-doc-lines td, .qfs-doc-grand, .qfs-doc-thumb,
   .qfs-doc-footer, .qfs-doc-rule { border-color: #ccc !important; }
   .qfs-doc-head.qfs-doc-head-accent,

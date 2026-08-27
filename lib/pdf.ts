@@ -1,6 +1,7 @@
 import type { PaperFormat, Page } from 'puppeteer-core'
 import { getSiteUrl } from '@/lib/config/env'
-import { docPageSetup, PDF_FOOTER_REGION_ID, type DocPageSetup } from '@/modules/quote-for-shop/lib/doc-page-settings'
+import { docPageSetup, type DocPageSetup } from '@/modules/quote-for-shop/lib/doc-page-settings'
+import { PDF_FOOTER_REGION_ID } from '@/modules/shop/lib/doc-page-settings'
 
 // Turning the quote document into a PDF.
 //
