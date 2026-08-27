@@ -53,6 +53,9 @@ export default async function QuoteRequestPage() {
             thankYou={config.requestThankYou}
             submitLabel="Send my request"
             requirePhone={false}
+            customerReferenceLabel={
+              shop.customerReferenceFieldEnabled ? (shop.customerReferenceLabel.trim() || 'Purchase order number') : ''
+            }
           />
         </>
       )}

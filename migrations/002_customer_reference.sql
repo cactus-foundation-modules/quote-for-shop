@@ -1,0 +1,12 @@
+-- The customer's own reference for a quote: their purchase order number, their
+-- job number, whatever their finance team files it under.
+--
+-- The same field shop keeps on an order (shp_orders.customer_reference), asked
+-- for here as well so a quote that becomes an order carries it across rather
+-- than the number being asked for twice. Whether the box appears at all, what it
+-- is called and whether it is compulsory are Shop's settings, not this module's:
+-- one answer, and the quote and the checkout call it the same thing.
+--
+-- Idempotent, and defaulted to the empty string like every other text column on
+-- this table, so an existing row reads as "not given" rather than NULL.
+ALTER TABLE "qfs_quotes" ADD COLUMN IF NOT EXISTS "customer_reference" TEXT NOT NULL DEFAULT '';

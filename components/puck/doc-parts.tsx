@@ -45,6 +45,7 @@ type HeaderProps = DocProps & {
   titleSize?: string; sides?: string; rule?: string
   factsLayout?: string; numberStyle?: string
   quoteLabel?: string; codeLabel?: string; dateLabel?: string; validLabel?: string
+  showCustomerReference?: string; customerReferenceLabel?: string
   showDate?: string; showValid?: string
   titlePt?: number | string; numberPt?: number | string; factsPt?: number | string; introPt?: number | string
 }
@@ -91,6 +92,16 @@ export function QuoteDocHeader(props: HeaderProps) {
   const facts: { label: string; value: string }[] = []
   if (!leadNumber) facts.push({ label: props.quoteLabel?.trim() || 'Quote', value: quote.quoteNumber ?? '' })
   if (props.showCode !== 'no') facts.push({ label: props.codeLabel?.trim() || 'Code', value: quote.code ?? '' })
+  // The customer's OWN number for this job, where they gave one. On by default
+  // and safe to be: no quote made before the shop asked carries a value, and a
+  // row with no value is dropped below - so a layout published last year is
+  // unchanged until the day the box is switched on.
+  if (props.showCustomerReference !== 'no') {
+    facts.push({
+      label: props.customerReferenceLabel?.trim() || ctx.copy.customerReferenceLabel?.trim() || 'Your reference',
+      value: quote.customerReference ?? '',
+    })
+  }
   if (props.showDate !== 'no') facts.push({ label: props.dateLabel?.trim() || 'Date', value: formatDate(quote.createdAt) })
   if (props.showValid !== 'no') facts.push({ label: props.validLabel?.trim() || 'Valid until', value: formatDate(quote.expiresAt) })
   const rows = facts.filter((row) => row.value.trim() !== '')
@@ -163,6 +174,8 @@ export const quoteDocHeaderPuckComponent = {
     quoteLabel: { type: 'text' as const, label: '"Quote" row label' },
     showCode: { type: 'select' as const, label: 'Retrieval code', options: yesNo },
     codeLabel: { type: 'text' as const, label: '"Code" row label' },
+    showCustomerReference: { type: 'select' as const, label: "The customer's own reference", options: yesNo },
+    customerReferenceLabel: { type: 'text' as const, label: 'Their reference row label (blank uses the one in Shop settings)' },
     showDate: { type: 'select' as const, label: 'Date row', options: yesNo },
     dateLabel: { type: 'text' as const, label: '"Date" row label' },
     showValid: { type: 'select' as const, label: '"Valid until" row', options: yesNo },
@@ -177,6 +190,7 @@ export const quoteDocHeaderPuckComponent = {
     heading: '', fontFamily: '', titleSize: 'medium', sides: 'logo-left', rule: 'hairline',
     factsLayout: 'columns', numberStyle: 'row',
     quoteLabel: 'Quote', showCode: 'yes', codeLabel: 'Code',
+    showCustomerReference: 'yes', customerReferenceLabel: '',
     showDate: 'yes', dateLabel: 'Date', showValid: 'yes', validLabel: 'Valid until',
   },
   render: QuoteDocHeader,

@@ -42,6 +42,9 @@ const Body = z.object({
   customerEmail: z.string().max(200).optional(),
   customerPhone: z.string().max(60).optional(),
   company: z.string().max(160).optional(),
+  // Their own reference for the job - usually arrives after the quote does, when
+  // the customer's finance team has raised the purchase order.
+  customerReference: z.string().max(120).optional(),
   lines: z.array(LineSchema).max(200).optional(),
   /** ISO date, or null to clear the expiry entirely. */
   expiresAt: z.string().nullable().optional(),

@@ -24,6 +24,7 @@ export function QuoteRequestFormClient({
   thankYou,
   submitLabel,
   requirePhone,
+  customerReferenceLabel,
   preview,
 }: {
   heading: string
@@ -31,6 +32,12 @@ export function QuoteRequestFormClient({
   thankYou: string
   submitLabel: string
   requirePhone: boolean
+  // What the shop calls the customer's own reference, or empty when the shop
+  // does not ask for one - in which case the box is not drawn at all. Always
+  // optional here, whatever the checkout insists on: a purchase order number is
+  // raised AFTER a price is agreed, so demanding one before quoting would be
+  // asking for a number that does not exist yet.
+  customerReferenceLabel: string
   preview?: boolean
 }) {
   const [itemCount, setItemCount] = useState(preview ? 4 : 0)
@@ -38,6 +45,7 @@ export function QuoteRequestFormClient({
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [company, setCompany] = useState('')
+  const [reference, setReference] = useState('')
   const [message, setMessage] = useState('')
   // The honeypot's value. Never shown, never filled by a person - see the field
   // itself further down. Posted as `website`, which the server refuses.
@@ -66,6 +74,7 @@ export function QuoteRequestFormClient({
           email: email.trim(),
           phone: phone.trim(),
           company: company.trim(),
+          customerReference: reference.trim(),
           message: message.trim(),
           website: website.trim(),
         }),
@@ -141,6 +150,12 @@ export function QuoteRequestFormClient({
               <label htmlFor="qfs-req-company">Company (optional)</label>
               <input id="qfs-req-company" value={company} autoComplete="organization" onChange={(event) => setCompany(event.target.value)} />
             </div>
+            {customerReferenceLabel && (
+              <div className="qfs-field">
+                <label htmlFor="qfs-req-reference">{customerReferenceLabel} (optional)</label>
+                <input id="qfs-req-reference" value={reference} onChange={(event) => setReference(event.target.value)} />
+              </div>
+            )}
             <div className="qfs-field">
               <label htmlFor="qfs-req-message">Anything we should know? (optional)</label>
               <textarea id="qfs-req-message" rows={4} value={message} onChange={(event) => setMessage(event.target.value)} />

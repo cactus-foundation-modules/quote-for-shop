@@ -103,6 +103,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     customerEmail: quote.customerEmail,
     customerName: quote.customerName || quote.company || quote.customerEmail,
     customerPhone: quote.customerPhone || null,
+    // Their own reference, carried straight across. It is the number their
+    // finance team will match our invoice to, and asking for it a second time
+    // after they have already given it on the quote is how it gets mistyped.
+    customerReference: quote.customerReference || null,
     shippingAddress: address,
     subtotal: quote.totals.subtotal,
     discountAmount: quote.totals.discountAmount,

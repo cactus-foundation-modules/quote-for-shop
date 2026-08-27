@@ -14,6 +14,9 @@ export function QuoteRequestForm(props: QuoteRequestFormProps) {
       thankYou=""
       submitLabel={props.submitLabel?.trim() || 'Send my request'}
       requirePhone={props.requirePhone === 'yes'}
+      // The canvas has no settings, so the box is drawn with its stock name -
+      // an author needs to see it is there.
+      customerReferenceLabel="Purchase order number"
     />
   )
 }

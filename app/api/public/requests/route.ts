@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getMemberFromCookie } from '@/lib/members/session'
 import { shopClosedResponse } from '@/modules/shop/lib/access'
+import { getShopConfigCached } from '@/modules/shop/lib/config'
 import { checkInMemoryRateLimit, getClientIpFromRequest } from '@/modules/shop/lib/rate-limit'
 import { getQuoteConfigCached, isQuoteOnly, pricesHidden } from '@/modules/quote-for-shop/lib/config'
 import { buildQuoteSnapshot } from '@/modules/quote-for-shop/lib/snapshot'
@@ -27,6 +28,7 @@ const Body = z.object({
   email: z.string().email().max(200),
   phone: z.string().max(60).optional(),
   company: z.string().max(160).optional(),
+  customerReference: z.string().max(120).optional(),
   message: z.string().max(4000).optional(),
   // The honeypot. Named `website` because that is what a form-stuffer expects
   // to find and fill; a real shopper never sees the field. Optional, so a form
@@ -59,6 +61,7 @@ export async function POST(request: NextRequest) {
   }
 
   const config = await getQuoteConfigCached()
+  const shop = await getShopConfigCached().catch(() => null)
   const snapshot = await buildQuoteSnapshot(data.lines, { customerEmail: data.email })
   if (snapshot.lines.length === 0) {
     return NextResponse.json({ error: 'Nothing on your list can be quoted at the moment.' }, { status: 409 })
@@ -77,6 +80,10 @@ export async function POST(request: NextRequest) {
     customerEmail: data.email.trim(),
     customerPhone: data.phone?.trim() ?? '',
     company: data.company?.trim() ?? '',
+    // Only kept while the shop is actually asking for one, the same rule the
+    // checkout follows: switching the box off stops quotes carrying whatever a
+    // stale page still had in it.
+    customerReference: shop?.customerReferenceFieldEnabled ? (data.customerReference?.trim() ?? '') : '',
     message: data.message?.trim() ?? '',
     currency: snapshot.currency,
     currencySymbol: snapshot.currencySymbol,

@@ -36,6 +36,7 @@ export function toPublicQuote(quote: Quote): PublicQuote {
     status: quote.status,
     customerName: quote.customerName,
     company: quote.company,
+    customerReference: quote.customerReference,
     message: quote.message,
     reply: quote.reply,
     currencySymbol: quote.currencySymbol,
@@ -88,6 +89,14 @@ export async function loadQuoteDocContext(quote: Quote, opts?: { print?: boolean
       intro: config.documentIntro,
       terms: config.terms,
       validity: config.validityNote,
+      // Shop's wording, for the same reason the trading identity above is
+      // shop's: a quote that calls it a purchase order number and an invoice
+      // that calls it something else is two names for one number.
+      // Read through a fallback rather than straight off the config: this module
+      // can be pinned to a shop older than the release that added the setting,
+      // and a missing key must read as "not set" rather than throw on a
+      // document somebody is trying to print.
+      customerReferenceLabel: (shop?.customerReferenceLabel ?? '').trim() || 'Purchase order number',
     },
     print: opts?.print ?? false,
   }
@@ -163,7 +172,7 @@ function quoteAsDocFooterContext(ctx: QuoteDocContext): InvoiceDocContext {
       email: seller?.email ?? '', phone: seller?.phone ?? '',
       siteName: ctx.site.name, siteUrl: ctx.site.url, logoUrl: ctx.site.logoUrl,
     },
-    customer: { name: '', company: '', email: '', phone: '', billingAddress: [], shippingAddress: [] },
+    customer: { name: '', company: '', reference: '', email: '', phone: '', billingAddress: [], shippingAddress: [] },
     lines: [],
     taxBreakdown: [],
     wording: { heading: '', intro: '', taxLabel: '', paymentDetails: '', terms: '', footer: '' },

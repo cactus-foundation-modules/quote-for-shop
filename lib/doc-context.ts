@@ -36,7 +36,15 @@ export type QuoteDocContext = {
   }
   /** Wording from module settings: the heading, the intro, the terms and the
    *  validity note, resolved once. */
-  copy: { heading: string; intro: string; terms: string; validity: string }
+  copy: {
+    heading: string; intro: string; terms: string; validity: string
+    /** What the shop calls the customer's own reference ("Purchase order
+     *  number", "Job reference"). From Shop settings, not this module's - the
+     *  quote, the checkout and the invoice all have to call it one thing.
+     *  Optional so a context built before it existed still renders, with the
+     *  block's own default standing in. */
+    customerReferenceLabel?: string
+  }
   /** True while rendering for the PDF. Parts use it to drop anything that only
    *  makes sense on screen - there is nothing to click in a PDF. */
   print: boolean
@@ -98,6 +106,7 @@ export const SAMPLE_QUOTE_CONTEXT: QuoteDocContext = {
     status: 'SENT',
     customerName: 'Sample Customer',
     company: 'Sample Company Ltd',
+    customerReference: 'PO-4471',
     message: 'Could you price these up for our new office, please?',
     reply: 'Happy to. Prices below hold for 30 days.',
     currencySymbol: '£',
@@ -148,6 +157,7 @@ export const SAMPLE_QUOTE_CONTEXT: QuoteDocContext = {
     intro: '',
     terms: 'Payment terms 30 days. Goods remain our property until paid for in full.',
     validity: 'This quote is valid for 30 days unless stated otherwise.',
+    customerReferenceLabel: 'Purchase order number',
   },
   print: false,
 }

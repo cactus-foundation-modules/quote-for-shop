@@ -70,6 +70,7 @@ export function QuoteDetailScreen({ quoteId }: { quoteId: string }) {
   const [customerEmail, setCustomerEmail] = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
   const [company, setCompany] = useState('')
+  const [customerReference, setCustomerReference] = useState('')
   const [expiresAt, setExpiresAt] = useState('')
   const [dirty, setDirty] = useState(false)
   const [busy, setBusy] = useState<'idle' | 'saving' | 'sending' | 'converting'>('idle')
@@ -93,6 +94,7 @@ export function QuoteDetailScreen({ quoteId }: { quoteId: string }) {
       setCustomerEmail(loaded.customerEmail)
       setCustomerPhone(loaded.customerPhone)
       setCompany(loaded.company)
+      setCustomerReference(loaded.customerReference ?? '')
       setExpiresAt(toDateInput(loaded.expiresAt))
       setDirty(false)
       setError(null)
@@ -124,6 +126,7 @@ export function QuoteDetailScreen({ quoteId }: { quoteId: string }) {
       customerEmail: customerEmail.trim(),
       customerPhone: customerPhone.trim(),
       company: company.trim(),
+      customerReference: customerReference.trim(),
       expiresAt: expiresAt ? new Date(`${expiresAt}T23:59:59`).toISOString() : null,
       ...extra,
     }
@@ -326,6 +329,12 @@ export function QuoteDetailScreen({ quoteId }: { quoteId: string }) {
           <div style={{ display: 'grid', gap: '0.25rem' }}>
             <label htmlFor="qfs-cust-company" style={labelStyle}>Company</label>
             <input id="qfs-cust-company" value={company} onChange={(event) => { setCompany(event.target.value); setDirty(true) }} />
+          </div>
+          <div style={{ display: 'grid', gap: '0.25rem' }}>
+            {/* Their number for this job, not ours. Carried onto the order when
+                the quote is converted, so nobody is asked for it twice. */}
+            <label htmlFor="qfs-cust-reference" style={labelStyle}>Their reference</label>
+            <input id="qfs-cust-reference" maxLength={120} value={customerReference} onChange={(event) => { setCustomerReference(event.target.value); setDirty(true) }} />
           </div>
           <div style={{ display: 'grid', gap: '0.25rem' }}>
             <label htmlFor="qfs-cust-email" style={labelStyle}>Email</label>

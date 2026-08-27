@@ -76,6 +76,12 @@ export type Quote = {
   customerEmail: string
   customerPhone: string
   company: string
+  /** The customer's OWN reference for this quote - their purchase order number,
+   *  their job number. Carried onto the order when the quote is converted, so
+   *  nobody is asked for it twice. Whether the box appears at all, what it is
+   *  called and whether it is compulsory are Shop's settings: one answer, shared
+   *  with the checkout. */
+  customerReference: string
   message: string
   reply: string
   staffNotes: string
@@ -113,6 +119,7 @@ export type PublicQuote = {
   status: QuoteStatus
   customerName: string
   company: string
+  customerReference: string
   message: string
   reply: string
   currencySymbol: string

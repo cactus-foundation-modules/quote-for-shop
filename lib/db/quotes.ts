@@ -28,6 +28,7 @@ type QuoteRow = {
   customer_email: string
   customer_phone: string
   company: string
+  customer_reference: string
   message: string
   reply: string
   staff_notes: string
@@ -63,6 +64,7 @@ function toQuote(row: QuoteRow): Quote {
     customerEmail: row.customer_email,
     customerPhone: row.customer_phone,
     company: row.company,
+    customerReference: row.customer_reference ?? '',
     message: row.message,
     reply: row.reply,
     staffNotes: row.staff_notes,
@@ -94,6 +96,7 @@ export type CreateQuoteInput = {
   customerEmail?: string
   customerPhone?: string
   company?: string
+  customerReference?: string
   message?: string
   currency: string
   currencySymbol: string
@@ -125,11 +128,11 @@ export async function createQuote(input: CreateQuoteInput): Promise<Quote> {
       const rows = await prisma.$queryRaw<QuoteRow[]>`
         INSERT INTO "qfs_quotes" (
           "quote_number", "code", "kind", "customer_name", "customer_email", "customer_phone",
-          "company", "message", "currency", "currency_symbol", "lines", "totals", "cart",
+          "company", "customer_reference", "message", "currency", "currency_symbol", "lines", "totals", "cart",
           "prices_hidden", "member_id", "source_url", "expires_at"
         ) VALUES (
           ${number}, ${code}, ${input.kind}, ${input.customerName ?? ''}, ${input.customerEmail ?? ''}, ${input.customerPhone ?? ''},
-          ${input.company ?? ''}, ${input.message ?? ''}, ${input.currency}, ${input.currencySymbol},
+          ${input.company ?? ''}, ${input.customerReference ?? ''}, ${input.message ?? ''}, ${input.currency}, ${input.currencySymbol},
           ${JSON.stringify(input.lines)}::jsonb, ${JSON.stringify(input.totals)}::jsonb, ${JSON.stringify(input.cart)}::jsonb,
           ${input.pricesHidden}, ${input.memberId ?? null}, ${input.sourceUrl ?? ''}, ${input.expiresAt}
         )
@@ -223,7 +226,8 @@ export async function listQuotes(filter: ListQuotesFilter): Promise<{ quotes: Qu
            OR REPLACE("code", '-', '') ILIKE ${codeSearch} ESCAPE '\'
            OR "customer_name" ILIKE ${search} ESCAPE '\'
            OR "customer_email" ILIKE ${search} ESCAPE '\'
-           OR "company" ILIKE ${search} ESCAPE '\')
+           OR "company" ILIKE ${search} ESCAPE '\'
+           OR "customer_reference" ILIKE ${search} ESCAPE '\')
     ORDER BY "created_at" DESC
     LIMIT ${perPage} OFFSET ${offset}
   `
@@ -237,7 +241,8 @@ export async function listQuotes(filter: ListQuotesFilter): Promise<{ quotes: Qu
            OR REPLACE("code", '-', '') ILIKE ${codeSearch} ESCAPE '\'
            OR "customer_name" ILIKE ${search} ESCAPE '\'
            OR "customer_email" ILIKE ${search} ESCAPE '\'
-           OR "company" ILIKE ${search} ESCAPE '\')
+           OR "company" ILIKE ${search} ESCAPE '\'
+           OR "customer_reference" ILIKE ${search} ESCAPE '\')
   `
   return { quotes: rows.map(toQuote), total: Number(counted[0]?.count ?? 0) }
 }
@@ -250,6 +255,7 @@ export type UpdateQuoteInput = {
   customerEmail?: string
   customerPhone?: string
   company?: string
+  customerReference?: string
   lines?: QuoteLine[]
   totals?: QuoteTotals
   expiresAt?: Date | null
@@ -281,6 +287,7 @@ export async function updateQuote(id: string, patch: UpdateQuoteInput): Promise<
       "customer_email" = COALESCE(${patch.customerEmail ?? null}, "customer_email"),
       "customer_phone" = COALESCE(${patch.customerPhone ?? null}, "customer_phone"),
       "company" = COALESCE(${patch.company ?? null}, "company"),
+      "customer_reference" = COALESCE(${patch.customerReference ?? null}, "customer_reference"),
       "lines" = COALESCE(${linesJson}::jsonb, "lines"),
       "totals" = COALESCE(${totalsJson}::jsonb, "totals"),
       "expires_at" = CASE WHEN ${touchExpiry} THEN ${patch.expiresAt ?? null} ELSE "expires_at" END,
