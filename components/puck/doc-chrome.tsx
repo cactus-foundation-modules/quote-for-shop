@@ -69,12 +69,25 @@ const DENSITIES: Record<string, { row: string; gap: string; gapLg: string }> = {
   roomy: { row: '0.9375rem', gap: '2.25rem', gapLg: '2.75rem' },
 }
 
+/** Line spacing, as a multiple of whatever size each run of text is set in.
+ *  Unitless on purpose - a document whose leading is a fixed number of pixels
+ *  ignores every size field on every block, which is exactly the fault this was
+ *  added to put right (see the stylesheet). 'normal' emits nothing, because it
+ *  is what the stylesheet already falls back to. */
+const LEADINGS: Record<string, string> = {
+  tight: '1.15',
+  snug: '1.3',
+  normal: '1.4',
+  relaxed: '1.6',
+  roomy: '1.8',
+}
+
 type StyleProps = {
   accent?: string; labelColour?: string; titleColour?: string
   tableHeadBg?: string; tableHeadInk?: string
   panelBg?: string; panelInk?: string; zebraBg?: string
   ruleWeight?: string; ruleWeightPx?: string; corners?: string; cornerRadius?: string; density?: string
-  blockGap?: string; blockGapLarge?: string
+  blockGap?: string; blockGapLarge?: string; lineSpacing?: string
   bodyFont?: string; headingFont?: string
 }
 
@@ -108,6 +121,7 @@ export function QuoteDocStyle(props: StyleProps) {
     ['--qfs-doc-row-y', density?.row],
     ['--qfs-doc-gap', cssLength(props.blockGap) ?? density?.gap],
     ['--qfs-doc-gap-lg', cssLength(props.blockGapLarge) ?? density?.gapLg],
+    ['--qfs-doc-leading', props.lineSpacing && props.lineSpacing !== 'normal' ? LEADINGS[props.lineSpacing] : undefined],
     ['--qfs-doc-body-font', props.bodyFont?.trim()],
     ['--qfs-doc-head-font', props.headingFont?.trim()],
   ])
@@ -154,6 +168,13 @@ export const quoteDocStylePuckComponent = {
     ] },
     blockGap: spaceField('…or exactly this gap between blocks'),
     blockGapLarge: spaceField('…and this one before the small print'),
+    lineSpacing: { type: 'select' as const, label: 'Line spacing', options: [
+      { value: 'tight', label: 'Tight' },
+      { value: 'snug', label: 'Snug' },
+      { value: 'normal', label: 'Normal' },
+      { value: 'relaxed', label: 'Relaxed' },
+      { value: 'roomy', label: 'Roomy' },
+    ] },
     bodyFont: fontField,
     headingFont: headingFontField,
   },
@@ -161,7 +182,7 @@ export const quoteDocStylePuckComponent = {
     accent: '', labelColour: '', titleColour: '',
     tableHeadBg: '', tableHeadInk: '', panelBg: '', panelInk: '', zebraBg: '',
     ruleWeight: 'thick', ruleWeightPx: '', corners: 'square', cornerRadius: '',
-    density: 'normal', blockGap: '', blockGapLarge: '',
+    density: 'normal', blockGap: '', blockGapLarge: '', lineSpacing: 'normal',
     bodyFont: '', headingFont: '',
   },
   render: QuoteDocStyle,

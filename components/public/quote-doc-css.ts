@@ -37,6 +37,28 @@ export const QUOTE_DOC_CSS = `
 .qfs-doc-h1 { font-family: var(--qfs-doc-head-font, var(--h1-family, var(--font-heading, var(--font-body, inherit)))); font-weight: var(--h1-weight, 700); letter-spacing: var(--h1-letter-spacing, normal); text-transform: var(--h1-transform, none); }
 .qfs-doc-h2 { font-family: var(--qfs-doc-head-font, var(--h2-family, var(--font-heading, var(--font-body, inherit)))); font-weight: var(--h2-weight, 700); letter-spacing: var(--h2-letter-spacing, normal); text-transform: var(--h2-transform, none); }
 
+/* Leading, stated by the document rather than inherited from the page it is
+   sitting on.
+
+   A site's body typography is written for a web page, and Appearance > Styles
+   lets an owner set it as an exact line height in PIXELS - "16px text, 24px
+   leading", which is how a type scale is normally written. A px line-height is
+   inherited as a LENGTH, so it arrives unchanged on a run of text an owner has
+   set to 11px here, and the document prints with two lines of air between every
+   address line. The small headings are worse: 'main h2' carries the site's own
+   h2 leading (36px, under a 13px label) and an INHERITED value cannot beat a
+   rule that matches, so the parts had to say it themselves.
+
+   Unitless on purpose. That is the whole fix: every size field on every block
+   now gets leading in proportion to the size an owner picked, on screen and on
+   paper alike. --qfs-doc-leading is the Document style block's Line spacing field;
+   the fallbacks below are what each part reads best at, and the parts that want
+   a little more air (the notice, the small print) keep it. */
+.qfs-doc-head, .qfs-doc-intro, .qfs-doc-lead, .qfs-doc-for, .qfs-doc-parties,
+.qfs-doc-lines, .qfs-doc-poa, .qfs-doc-totals, .qfs-doc-note, .qfs-doc-notes,
+.qfs-doc-notice, .qfs-doc-footer, .qfs-doc-rule, .qfs-doc-quote,
+.qfs-doc-h1, .qfs-doc-h2 { line-height: var(--qfs-doc-leading, 1.4); }
+
 .qfs-doc-head { display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: space-between; align-items: flex-start; padding-bottom: 1rem; border-bottom: 1px solid var(--color-border); }
 /* The rule under the heading, as three looks rather than three fields. */
 .qfs-doc-head.qfs-doc-head-accent { padding-bottom: 1.25rem; border-bottom: var(--qfs-doc-rule-w, 3px) solid var(--qfs-doc-accent, var(--color-border)); }
@@ -69,7 +91,7 @@ export const QUOTE_DOC_CSS = `
    labels and values into two columns. The gap between a label and its value is
    drawn rather than typed: a text node between <dt> and <dd> is not something a
    <dl> may hold, and white-space: pre stops it collapsing to nothing. */
-.qfs-doc-facts.qfs-doc-facts-stack { display: block; text-align: right; line-height: 1.5; }
+.qfs-doc-facts.qfs-doc-facts-stack { display: block; text-align: right; line-height: var(--qfs-doc-leading, 1.5); }
 /* The wrapper is the line here, so each pair breaks after itself. It used to be
    an empty ::after block on every <dd>, which put one blank line under the last
    row of every stacked heading. */
@@ -99,9 +121,14 @@ export const QUOTE_DOC_CSS = `
 .qfs-doc-party .qfs-doc-strong { font-weight: 600; }
 .qfs-doc-reg { margin: 0.5rem 0 0; display: grid; gap: 0.125rem; font-size: var(--qfs-doc-reg-size, 0.8125rem); color: var(--color-text-muted); }
 
+/* 'font-size: inherit' on the cells is load-bearing, not tidying. globals.css
+   styles bare 'td' for the site's own tables, font size included, and an element
+   selector beats a size INHERITED from the table above it - so the items block's
+   row size moved the <table> and every cell on the page carried on at the site's
+   table size. It looked exactly like a field that did nothing. */
 .qfs-doc-lines { width: 100%; border-collapse: collapse; margin: var(--qfs-doc-gap, 1.5rem) 0 0; font-size: var(--qfs-doc-row-size, 0.9375rem); }
-.qfs-doc-lines th { text-align: left; padding: 0.5rem 0.5rem 0.5rem 0; border-bottom: 1px solid var(--color-border); color: var(--qfs-doc-thead-ink, var(--color-text-muted)); font-weight: 600; font-size: var(--qfs-doc-thead-size, 0.8125rem); text-transform: uppercase; letter-spacing: 0.02em; }
-.qfs-doc-lines td { padding: var(--qfs-doc-row-y, 0.625rem) 0.5rem var(--qfs-doc-row-y, 0.625rem) 0; border-bottom: 1px solid var(--color-border-subtle, var(--color-border)); vertical-align: top; color: var(--color-text); }
+.qfs-doc-lines th { background: transparent; text-align: left; padding: 0.5rem 0.5rem 0.5rem 0; border-bottom: 1px solid var(--color-border); color: var(--qfs-doc-thead-ink, var(--color-text-muted)); font-weight: 600; font-size: var(--qfs-doc-thead-size, 0.8125rem); text-transform: uppercase; letter-spacing: 0.02em; }
+.qfs-doc-lines td { padding: var(--qfs-doc-row-y, 0.625rem) 0.5rem var(--qfs-doc-row-y, 0.625rem) 0; border-bottom: 1px solid var(--color-border-subtle, var(--color-border)); vertical-align: top; color: var(--color-text); font-size: inherit; }
 .qfs-doc-lines th:last-child, .qfs-doc-lines td:last-child { padding-right: 0; }
 /* A banded head. The fill needs padding inside the cells to sit in, which the
    ruled head does not, so the whole treatment is one class rather than a colour
@@ -127,6 +154,25 @@ export const QUOTE_DOC_CSS = `
 .qfs-doc-lines.qfs-doc-zebra tbody tr td:last-child { border-radius: 0 var(--qfs-doc-row-radius, 0) var(--qfs-doc-row-radius, 0) 0; }
 .qfs-doc-lines.qfs-doc-rows-none td { border-bottom: 0; }
 .qfs-doc-lines.qfs-doc-rows-none tbody tr:last-child td { border-bottom: 1px solid var(--color-border); }
+/* Three of the site's own table rules reach into the document and beat what the
+   rules above say, because a bare element selector still outranks a value that
+   was merely INHERITED, and app/globals.css styles tables for the site's own
+   content:
+
+    - 'tr:last-child td { border-bottom: none }' outranks '.qfs-doc-lines td'
+      (two elements and a pseudo-class against one class and an element), so the
+      rule that closes the table never printed at all.
+    - bare 'th' carries the site's subtle fill, and nothing above says anything
+      about a heading's background, so a head set to "Ruled underneath" came out
+      on a grey band anyway.
+    - 'tbody tr:hover' lit the rows up under the pointer on the document page. A
+      printed document is not a data table somebody is picking a row out of.
+
+   Each is answered at the specificity it takes to win and no more, so the items
+   block's own filled band, its zebra shading and its "rules under the last row
+   only" all still outrank these. */
+.qfs-doc-lines tbody tr:last-child td { border-bottom: 1px solid var(--color-border-subtle, var(--color-border)); }
+.qfs-doc-lines tbody tr:hover { background: transparent; }
 .qfs-doc-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .qfs-doc-imgcol { width: 56px; padding-right: 0.75rem; }
 .qfs-doc-thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; border: 1px solid var(--color-border); }
@@ -171,7 +217,7 @@ export const QUOTE_DOC_CSS = `
    Notice panel - the sentence a quote says before it says any numbers: how long
    the price holds, and what to do about it.
    --------------------------------------------------------------------------- */
-.qfs-doc-notice { margin: var(--qfs-doc-gap, 1.5rem) 0 0; font-size: var(--qfs-doc-notice-size, 0.9375rem); line-height: 1.55; color: var(--qfs-doc-panel-ink, var(--color-text)); }
+.qfs-doc-notice { margin: var(--qfs-doc-gap, 1.5rem) 0 0; font-size: var(--qfs-doc-notice-size, 0.9375rem); line-height: var(--qfs-doc-leading, 1.55); color: var(--qfs-doc-panel-ink, var(--color-text)); }
 .qfs-doc-notice p { margin: 0 0 0.5rem; }
 .qfs-doc-notice p:last-child { margin-bottom: 0; }
 .qfs-doc-notice .qfs-doc-notice-lead { font-weight: 700; }
@@ -188,7 +234,7 @@ export const QUOTE_DOC_CSS = `
 .qfs-doc-footer.qfs-doc-align-left { text-align: left; }
 .qfs-doc-footer.qfs-doc-align-right { text-align: right; }
 .qfs-doc-footer .qfs-doc-contact { margin: 0 0 0.5rem; font-size: var(--qfs-doc-footer-contact-size, 0.875rem); font-weight: 700; color: var(--qfs-doc-accent, var(--color-text)); }
-.qfs-doc-footer .qfs-doc-small { margin: 0; font-size: var(--qfs-doc-footer-small-size, 0.75rem); line-height: 1.6; color: var(--color-text-muted); }
+.qfs-doc-footer .qfs-doc-small { margin: 0; font-size: var(--qfs-doc-footer-small-size, 0.75rem); line-height: var(--qfs-doc-leading, 1.6); color: var(--color-text-muted); }
 
 /* A rule of its own, for the gaps the blocks around it do not rule themselves. */
 .qfs-doc-rule { border: 0; border-top: 1px solid var(--qfs-doc-rule-ink, var(--color-border)); }
