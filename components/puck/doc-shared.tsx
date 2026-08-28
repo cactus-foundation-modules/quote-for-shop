@@ -316,7 +316,13 @@ export function quoteTokens(ctx: QuoteDocContext): Record<string, string> {
     VALIDITY_NOTE: copy.validity ?? '',
     // Nothing on a quote whose prices are being withheld: a total the shop has
     // deliberately not published must not leak out through a notice panel.
-    SUBTOTAL: quote.pricesHidden ? '' : formatMoney(quote.totals.subtotal, symbol),
+    // The goods, matching the totals block's own subtotal row: where a per-item
+    // delivery service was broken out into charge rows, the whole subtotal is
+    // the goods PLUS that delivery, and two different "subtotals" on one page is
+    // the sort of thing a customer rings up about.
+    SUBTOTAL: quote.pricesHidden
+      ? ''
+      : formatMoney(quote.totals.charges.length > 0 ? quote.totals.goodsSubtotal : quote.totals.subtotal, symbol),
     TOTAL: quote.pricesHidden ? '' : formatMoney(quote.totals.total, symbol),
   }
 }

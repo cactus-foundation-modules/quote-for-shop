@@ -511,7 +511,17 @@ export function QuoteDocTotals(props: TotalsProps) {
   // A delivery row printed even at nothing, so a customer can see that delivery
   // is not a surprise still to come.
   const shipping = totals.shippingAmount
-  const showDelivery = props.showDeliveryRow === 'always' || shipping > 0
+  // The goods on their own where the charges below were broken out of the line
+  // prices - printing the whole subtotal AND the charge rows counted a per-item
+  // delivery service twice, and left the column adding up to more than the total
+  // underneath it. `goodsSubtotal` arrived with `charges`, so a quote holding
+  // charges holds it too; one without either reads exactly as it always did.
+  const subtotal = totals.charges.length > 0 ? totals.goodsSubtotal : totals.subtotal
+  // The carriage row stays quiet where the lines carried delivery of their own:
+  // `shippingAmount` is the ORDER's carriage rate, and on a shop that prices
+  // delivery per item it is nought while the customer is being quoted plenty -
+  // which turned the reassuring zero wording into a promise nobody could keep.
+  const showDelivery = shipping > 0 || (props.showDeliveryRow === 'always' && totals.charges.length === 0)
   const deliveryValue = shipping > 0
     ? formatMoney(shipping, quote.currencySymbol)
     : props.zeroDelivery?.trim() || formatMoney(0, quote.currencySymbol)
@@ -531,7 +541,7 @@ export function QuoteDocTotals(props: TotalsProps) {
         }}
       >
         <dt>{props.subtotalLabel?.trim() || 'Subtotal'}</dt>
-        <dd>{formatMoney(totals.subtotal, quote.currencySymbol)}</dd>
+        <dd>{formatMoney(subtotal, quote.currencySymbol)}</dd>
         {/* Named charges a cart-line resolver broke out of the line prices (a
             delivery service). Printed with the label it was handed. */}
         {totals.charges.map((charge) => (
