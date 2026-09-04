@@ -55,7 +55,7 @@ Nothing in this module writes to shop's own tables except the one place it must:
 
 ## The PDF
 
-Printed by a headless browser (`puppeteer-core` plus `@sparticuz/chromium` on a
+Printed by a headless browser (`puppeteer-core` plus `@sparticuz/chromium-min` on a
 deployment) opening the module's own bare document page (`/quote/<code>/view`). That is
 deliberate: the PDF is the same markup and the same CSS as the on-screen document,
 so moving a block in the layout editor moves it in the PDF too.
