@@ -1,4 +1,3 @@
-import { Render } from '@puckeditor/core/rsc'
 import type { Data } from '@puckeditor/core'
 import { getModuleLayoutPuckRscConfig } from '@/lib/puck/config.rsc'
 import { resolveThemeLayout } from '@/lib/layout/resolveThemeLayout'
@@ -9,6 +8,7 @@ import { QuoteRequestFormClient } from '@/modules/quote-for-shop/components/publ
 import { QuoteRequestItemsClient } from '@/modules/quote-for-shop/components/public/QuoteRequestItemsClient'
 import { getShopConfigCached } from '@/modules/shop/lib/config'
 import { pricesHidden } from '@/modules/quote-for-shop/lib/config'
+import { CactusRender } from '@/lib/puck/CactusRender'
 
 export const metadata = { title: 'Request a quote' }
 
@@ -39,7 +39,7 @@ export default async function QuoteRequestPage() {
           heads itself only when an author has actually given it a heading. */}
       <h1 style={{ fontSize: '1.75rem', margin: 0 }}>{config.requestHeading}</h1>
       {layout?.builderData ? (
-        <Render config={getModuleLayoutPuckRscConfig('quoteRequest') as any} data={layout.builderData as Data} />
+        <CactusRender config={getModuleLayoutPuckRscConfig('quoteRequest') as any} data={layout.builderData as Data} />
       ) : (
         <>
           <QuoteRequestItemsClient
