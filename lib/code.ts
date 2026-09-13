@@ -1,5 +1,3 @@
-import { randomInt } from 'crypto'
-
 // The retrieval code, and the only interesting thing about it: it is read off a
 // phone screen, written on the back of an envelope, and dictated down a telephone
 // to somebody in a warehouse. So the alphabet leaves out every character that
@@ -20,15 +18,13 @@ import { randomInt } from 'crypto'
 const ALPHABET = 'ACDEFGHJKMNPQRTUVWXY34679'
 const LENGTH = 8
 
-/** A fresh code, formatted the way it is shown to shoppers: two groups of four
- *  separated by a hyphen, which is what makes an 8-character string readable. */
-export function generateQuoteCode(): string {
-  let raw = ''
-  // randomInt, not Math.random: a guessable code is a link to somebody else's
-  // basket, name and email address.
-  for (let i = 0; i < LENGTH; i++) raw += ALPHABET[randomInt(0, ALPHABET.length)]
-  return formatQuoteCode(raw)
-}
+// Making a code lives in code-server.ts, not here. This file is imported by the
+// Retrieve Quote button, which is a client component on every page of a shop,
+// and generating a code needs Node's `crypto`. A browser bundle that meets a
+// `crypto` import gets a polyfill for it - about 121 KB gzip of stream, buffer
+// and hashing code, measured on deskwell.co.uk in September 2026 - so a button
+// that only ever formats a code was carrying the machinery to mint one onto
+// every page. Everything left in this file is plain string work.
 
 /** Groups a bare code for display: ABCD-EFGH. */
 export function formatQuoteCode(raw: string): string {

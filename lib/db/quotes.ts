@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db/prisma'
-import { generateQuoteCode } from '@/modules/quote-for-shop/lib/code'
+import { generateQuoteCode } from '@/modules/quote-for-shop/lib/code-server'
 import type {
   Quote,
   QuoteCartLine,

@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatQuoteCode,
-  generateQuoteCode,
   looksLikeQuoteCode,
   normaliseQuoteCode,
   QUOTE_CODE_ALPHABET,
   QUOTE_CODE_LENGTH,
 } from '@/modules/quote-for-shop/lib/code'
+import { generateQuoteCode } from '@/modules/quote-for-shop/lib/code-server'
 
 describe('quote codes', () => {
   it('generates readable codes from the unambiguous alphabet only', () => {
