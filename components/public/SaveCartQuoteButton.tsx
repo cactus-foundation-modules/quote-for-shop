@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { announceConversion } from '@/lib/analytics/conversion'
 import { getCart, subscribeCart } from '@/modules/shop/components/public/cart'
 import { QUOTE_UI_CSS } from '@/modules/quote-for-shop/components/public/quote-ui-css'
 import { QuoteLightbox } from '@/modules/quote-for-shop/components/public/QuoteLightbox'
@@ -90,6 +91,11 @@ export function SaveCartQuoteButton({
       setDocHtml(null)
       setDocFailed(false)
       setSaved(data as SavedQuote)
+      // Said out loud on core's conversion seam, so anything on the page that
+      // cares - an abandoned-basket list, say - can note that this basket was
+      // parked on purpose, without this module knowing who is listening.
+      // Its own type rather than 'quote': nobody asked for a price here.
+      announceConversion({ type: 'saved-cart', transactionId: (data as SavedQuote).quoteNumber })
       setStage('saved')
     } catch {
       setError('That did not save. Please check your connection and try again.')
