@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import type { QfsConfig } from '@/modules/quote-for-shop/lib/config'
+import { SettingsHeaderActions, SettingsHeaderStatus } from '@/components/admin/SettingsHeaderActions'
 
 // The Quotes settings panel, hosted inside Shop settings as a sub-tab of its own
 // (manifest settingsTabs > host: shop.settings-sub-tabs). It lives there rather
@@ -68,6 +69,13 @@ export function QuoteSettingsPanel() {
     <div>
       {error && <div className="alert alert-danger" role="alert">{error}</div>}
       {note && <div className="alert alert-success" role="status">{note}</div>}
+      <SettingsHeaderActions>
+        <SettingsHeaderStatus message={note} error={error} />
+        <button type="button" className="btn btn-primary" onClick={save} disabled={busy}>
+          {busy ? 'Saving…' : 'Save changes'}
+        </button>
+      </SettingsHeaderActions>
+      <div className="settings-masonry">
 
       <section style={card}>
         <h3 style={{ fontSize: '0.9375rem', margin: '0 0 0.5rem' }}>How this shop sells</h3>
@@ -246,9 +254,7 @@ export function QuoteSettingsPanel() {
         </div>
       </section>
 
-      <button type="button" className="btn btn-primary" onClick={save} disabled={busy}>
-        {busy ? 'Saving…' : 'Save quote settings'}
-      </button>
+      </div>
     </div>
   )
 }
