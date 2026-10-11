@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAdminPath } from '@/components/admin/AdminPathContext'
+import { useAdminConfirm } from '@/components/admin/useAdminConfirm'
 import { formatMoney } from '@/modules/shop/lib/money'
 import type { Quote, QuoteLine, QuoteStatus } from '@/modules/quote-for-shop/lib/types'
 
@@ -61,6 +62,7 @@ function toDateInput(value: string | Date | null): string {
 
 export function QuoteDetailScreen({ quoteId }: { quoteId: string }) {
   const adminPath = useAdminPath()
+  const [askConfirm, confirmNode] = useAdminConfirm()
   const [quote, setQuote] = useState<Quote | null>(null)
   const [rows, setRows] = useState<EditRow[]>([])
   const [reply, setReply] = useState('')
@@ -198,7 +200,7 @@ export function QuoteDetailScreen({ quoteId }: { quoteId: string }) {
   }
 
   async function convert() {
-    if (dirty && !window.confirm('This quote has unsaved changes. The order is made from what is SAVED. Carry on anyway?')) return
+    if (dirty && !(await askConfirm({ title: 'Carry on with unsaved changes?', message: 'This quote has unsaved changes. The order is made from what is SAVED.', confirmLabel: 'Carry on', danger: false }))) return
     setBusy('converting'); setError(null); setNote(null)
     try {
       const response = await fetch(`/api/m/quote-for-shop/admin/quotes/${quoteId}/convert`, {
@@ -271,6 +273,7 @@ export function QuoteDetailScreen({ quoteId }: { quoteId: string }) {
 
   return (
     <div>
+      {confirmNode}
       {error && <div className="alert alert-danger" role="alert">{error}</div>}
       {note && <div className="alert alert-success" role="status">{note}</div>}
 
