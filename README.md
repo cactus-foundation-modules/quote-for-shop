@@ -53,6 +53,13 @@ installed this module:
 Nothing in this module writes to shop's own tables except the one place it must: the
 "turn into an order" button, which goes through shop's own `createPendingOrder`.
 
+## The quote link
+
+`/quote/<code>` is a way back to the basket, not a document: it replaces the shopper's cart with
+the quote's products (at today's prices) and carries on to `/shop/cart`. If a price has moved
+or a product is gone it says so first and waits for a click. The designed document is at
+`/quote/<code>/view`.
+
 ## The PDF
 
 Printed by a headless browser (`puppeteer-core` plus `@sparticuz/chromium-min` on a

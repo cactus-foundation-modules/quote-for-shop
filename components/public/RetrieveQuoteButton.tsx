@@ -105,7 +105,7 @@ export function RetrieveQuoteButton({
             done ? (
               <>
                 <span className="qfs-lb-code">Your basket has been put back.</span>
-                <a className="qfs-btn" href={done.url}>View the quote</a>
+                <a className="qfs-btn" href={`${done.url}/view`}>View the quote</a>
                 <button type="button" className="qfs-btn qfs-btn-primary" onClick={() => setOpen(false)}>
                   Back to my basket
                 </button>

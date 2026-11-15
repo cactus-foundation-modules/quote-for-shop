@@ -210,7 +210,7 @@ export function SaveCartQuoteButton({
                   {copied ? 'Copied' : 'Copy'}
                 </button>
               </span>
-              <a className="qfs-btn" href={saved.url}>Open my quote</a>
+              <a className="qfs-btn" href={`${saved.url}/view`}>Open my quote</a>
               {pdfEnabled && saved.pdfUrl && (
                 // A plain link, not a fetch: the browser's own download handling is
                 // better at saving a file than anything this component could do,
@@ -241,7 +241,7 @@ export function SaveCartQuoteButton({
             ) : docFailed ? (
               <p className="qfs-note">
                 The preview would not load, but the quote itself is safe -{' '}
-                <a href={saved.url}>open it on its own page</a>.
+                <a href={`${saved.url}/view`}>open it on its own page</a>.
               </p>
             ) : (
               <p className="qfs-note">Loading your quote…</p>
