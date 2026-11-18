@@ -3,8 +3,7 @@ import { z } from 'zod'
 import { getMemberFromCookie } from '@/lib/members/session'
 import { shopClosedResponse } from '@/modules/shop/lib/access'
 import { getShopConfigCached } from '@/modules/shop/lib/config'
-import { checkInMemoryRateLimit } from '@/modules/shop/lib/rate-limit'
-import { getClientIp } from '@/lib/auth/rate-limit'
+import { getClientIp, checkSharedRateLimit } from '@/lib/auth/rate-limit'
 import { getQuoteConfigCached, isQuoteOnly, pricesHidden } from '@/modules/quote-for-shop/lib/config'
 import { buildQuoteSnapshot } from '@/modules/quote-for-shop/lib/snapshot'
 import { createQuote } from '@/modules/quote-for-shop/lib/db/quotes'
@@ -43,7 +42,7 @@ export async function POST(request: NextRequest) {
   if (closed) return closed
 
   const ip = await getClientIp()
-  if (!checkInMemoryRateLimit(`qfs-request:${ip}`, 6, 60_000)) {
+  if (!(await checkSharedRateLimit(`qfs-request:${ip}`, 6, 60_000))) {
     return NextResponse.json({ error: 'Too many attempts, please try again in a little while.' }, { status: 429 })
   }
 

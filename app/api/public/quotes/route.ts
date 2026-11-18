@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getMemberFromCookie } from '@/lib/members/session'
 import { shopClosedResponse } from '@/modules/shop/lib/access'
-import { checkInMemoryRateLimit } from '@/modules/shop/lib/rate-limit'
-import { getClientIp } from '@/lib/auth/rate-limit'
+import { getClientIp, checkSharedRateLimit } from '@/lib/auth/rate-limit'
 import { getQuoteConfigCached, pricesHidden } from '@/modules/quote-for-shop/lib/config'
 import { buildQuoteSnapshot } from '@/modules/quote-for-shop/lib/snapshot'
 import { createQuote } from '@/modules/quote-for-shop/lib/db/quotes'
@@ -36,7 +35,7 @@ export async function POST(request: NextRequest) {
   // Writes a row and may send two emails, so it gets the same guard shop puts on
   // its own public mutating routes.
   const ip = await getClientIp()
-  if (!checkInMemoryRateLimit(`qfs-save:${ip}`, 10, 60_000)) {
+  if (!(await checkSharedRateLimit(`qfs-save:${ip}`, 10, 60_000))) {
     return NextResponse.json({ error: 'Too many attempts, please try again in a little while.' }, { status: 429 })
   }
 

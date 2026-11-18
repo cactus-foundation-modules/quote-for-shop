@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { shopClosedResponse } from '@/modules/shop/lib/access'
-import { checkInMemoryRateLimit } from '@/modules/shop/lib/rate-limit'
-import { getClientIp } from '@/lib/auth/rate-limit'
+import { getClientIp, checkSharedRateLimit } from '@/lib/auth/rate-limit'
 import { looksLikeQuoteCode, normaliseQuoteCode } from '@/modules/quote-for-shop/lib/code'
 import { getQuoteByCode } from '@/modules/quote-for-shop/lib/db/quotes'
 import { getQuoteConfigCached } from '@/modules/quote-for-shop/lib/config'
@@ -19,7 +18,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ cod
   if (closed) return closed
 
   const ip = await getClientIp()
-  if (!checkInMemoryRateLimit(`qfs-pdf:${ip}`, 5, 60_000)) {
+  if (!(await checkSharedRateLimit(`qfs-pdf:${ip}`, 5, 60_000))) {
     return NextResponse.json({ error: 'Too many downloads at once, please try again in a minute.' }, { status: 429 })
   }
 

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { shopClosedResponse } from '@/modules/shop/lib/access'
-import { checkInMemoryRateLimit } from '@/modules/shop/lib/rate-limit'
-import { getClientIp } from '@/lib/auth/rate-limit'
+import { getClientIp, checkSharedRateLimit } from '@/lib/auth/rate-limit'
 import { looksLikeQuoteCode, normaliseQuoteCode } from '@/modules/quote-for-shop/lib/code'
 import { getQuoteRowByCode, markQuoteViewed } from '@/modules/quote-for-shop/lib/db/quotes'
 import { buildQuoteSnapshot } from '@/modules/quote-for-shop/lib/snapshot'
@@ -25,7 +24,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ cod
 
   // A code is short enough to be worth guessing at, so the guesser gets throttled.
   const ip = await getClientIp()
-  if (!checkInMemoryRateLimit(`qfs-retrieve:${ip}`, 20, 60_000)) {
+  if (!(await checkSharedRateLimit(`qfs-retrieve:${ip}`, 20, 60_000))) {
     return NextResponse.json({ error: 'Too many attempts, please try again in a little while.' }, { status: 429 })
   }
 
