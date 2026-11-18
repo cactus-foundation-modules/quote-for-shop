@@ -77,27 +77,31 @@ async function trySend(
   to: string,
   vars: Record<string, string>,
   opts?: { replyTo?: string },
-): Promise<void> {
-  if (!isEmailConfigured()) return
+): Promise<boolean> {
+  if (!isEmailConfigured()) return false
   try {
     const rendered = await renderEmailTemplate(key, vars)
-    if (!rendered) return
+    if (!rendered) return false
     await sendEmail({ to, subject: rendered.subject, html: rendered.html, text: rendered.text, ...opts })
+    return true
   } catch (error) {
     // Deliberately swallowed: see the note at the top of this file. Logged so the
     // owner's deployment log still shows what went wrong.
     console.error('[quote-for-shop] email send failed', error)
+    return false
   }
 }
 
-/** The shopper's copy of a cart they parked, carrying the code and the link. */
-export async function sendSavedQuoteToShopper(quote: Quote): Promise<void> {
-  if (!quote.customerEmail) return
+/** The shopper's copy of a cart they parked, carrying the code and the link.
+ *  True when it went: false for no address, the email switched off in this
+ *  module's settings or in Settings > Emails, or a send that failed. */
+export async function sendSavedQuoteToShopper(quote: Quote): Promise<boolean> {
+  if (!quote.customerEmail) return false
   const config = await getQuoteConfigCached()
-  if (!config.emailShopperCode) return
+  if (!config.emailShopperCode) return false
 
   const site = await siteFacts()
-  await trySend('quote-for-shop.saved-basket', quote.customerEmail, {
+  return trySend('quote-for-shop.saved-basket', quote.customerEmail, {
     siteName: site.name,
     code: quote.code,
     quoteUrl: quoteUrl(site.url, quote),

@@ -98,6 +98,10 @@ export type CreateQuoteInput = {
   company?: string
   customerReference?: string
   message?: string
+  /** Notes for the shop's own eyes, never printed on the document. Set when
+   *  the quote is written by something other than the shopper (staff, another
+   *  module) so the team can see where it came from. */
+  staffNotes?: string
   currency: string
   currencySymbol: string
   lines: QuoteLine[]
@@ -128,11 +132,11 @@ export async function createQuote(input: CreateQuoteInput): Promise<Quote> {
       const rows = await prisma.$queryRaw<QuoteRow[]>`
         INSERT INTO "qfs_quotes" (
           "quote_number", "code", "kind", "customer_name", "customer_email", "customer_phone",
-          "company", "customer_reference", "message", "currency", "currency_symbol", "lines", "totals", "cart",
+          "company", "customer_reference", "message", "staff_notes", "currency", "currency_symbol", "lines", "totals", "cart",
           "prices_hidden", "member_id", "source_url", "expires_at"
         ) VALUES (
           ${number}, ${code}, ${input.kind}, ${input.customerName ?? ''}, ${input.customerEmail ?? ''}, ${input.customerPhone ?? ''},
-          ${input.company ?? ''}, ${input.customerReference ?? ''}, ${input.message ?? ''}, ${input.currency}, ${input.currencySymbol},
+          ${input.company ?? ''}, ${input.customerReference ?? ''}, ${input.message ?? ''}, ${input.staffNotes ?? ''}, ${input.currency}, ${input.currencySymbol},
           ${JSON.stringify(input.lines)}::jsonb, ${JSON.stringify(input.totals)}::jsonb, ${JSON.stringify(input.cart)}::jsonb,
           ${input.pricesHidden}, ${input.memberId ?? null}, ${input.sourceUrl ?? ''}, ${input.expiresAt}
         )
