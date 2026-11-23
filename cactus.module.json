@@ -1,6 +1,6 @@
 {
   "name": "quote-for-shop",
-  "version": "0.1.43",
+  "version": "0.1.44",
   "tablePrefix": "qfs_",
   "description": "Quotes for the Shop: either turn the whole shop into a quote request flow (Add to quote, no checkout, prices optionally withheld), or leave ordinary checkout alone and let shoppers save a cart as a quote, retrieve it later with a short code, and download it as a PDF of a layout you design yourself.",
   "requiresCoreVersion": "0.5.1960",
@@ -8,7 +8,7 @@
   "requiresModules": [
     {
       "name": "shop",
-      "minVersion": "0.1.354"
+      "minVersion": "0.1.546"
     }
   ],
   "requiredEnvVars": [],
@@ -66,6 +66,36 @@
       "serverOnly": true,
       "import": "./lib/save-basket",
       "component": "basketQuoteSaver"
+    },
+    {
+      "point": "shop.cart-line-resolver",
+      "id": "quoted-lines",
+      "import": "./lib/quoted-line-resolver",
+      "component": "quotedLineResolver"
+    },
+    {
+      "point": "shop.cart-line-resolver-prefetch",
+      "id": "quoted-lines",
+      "import": "./lib/quoted-line-resolver",
+      "component": "quoteLinesPrefetch"
+    },
+    {
+      "point": "shop.virtual-cart-product",
+      "id": "quoted-charges",
+      "import": "./lib/quoted-line-resolver",
+      "component": "quoteVirtualProducts"
+    },
+    {
+      "point": "shop.order-paid",
+      "id": "quote-prices-spent",
+      "import": "./lib/quote-order-observer",
+      "component": "quoteOrderPaid"
+    },
+    {
+      "point": "shop.order-placed-unpaid",
+      "id": "quote-prices-spent",
+      "import": "./lib/quote-order-observer",
+      "component": "quoteOrderPlacedUnpaid"
     },
     {
       "point": "core.media-reference-rewriters",

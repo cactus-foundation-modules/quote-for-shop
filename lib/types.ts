@@ -36,6 +36,35 @@ export type QuoteLine = {
    *  means what it meant. Absent on a line no resolver dated, and on every
    *  quote saved before this was recorded - both print exactly as quoted. */
   delivery?: QuoteDeliveryPromise | null
+  /** Stable identity for the line, given to every line the moment staff save
+   *  the quote. It is how a basket line finds its way back to the line it was
+   *  agreed as (see lib/quoted-lines.ts) - an index would point at the wrong
+   *  line the moment one above it is removed. Absent on a line nobody has
+   *  saved in the admin since this existed. */
+  ref?: string
+  /** Hold `unitPrice` in the customer's basket rather than the shop's own price
+   *  today. Set by staff on the line, and always on for a custom variation or a
+   *  line with no product. Absent or false means the basket prices it as the
+   *  shop does - the photograph, not the promise. */
+  priceLocked?: boolean
+  /** A custom variation: a one-off made-up item sold on the back of a real
+   *  listing (`productId` is that LISTING). `optionsText` is the owner's own
+   *  wording for the options ("Central / No Back / Band 2 TBC"). Null or
+   *  absent on an ordinary line. */
+  custom?: QuoteCustomVariation | null
+  /** The delivery service the line starts on in the basket - a key from the
+   *  services the listing's variations offer. The customer may switch to any
+   *  other of them there. Null leaves it to the shop's default. */
+  deliveryTier?: string | null
+  /** A line with no product (a fixed charge): whether the customer may take it
+   *  out of their basket. Absent reads as no. */
+  removable?: boolean
+}
+
+export type QuoteCustomVariation = {
+  optionsText: string
+  /** The listing's own name when the variation was made, for the editor. */
+  listingName?: string
 }
 
 /** `detailLabel` names which of the line's detail rows this promise is the
@@ -96,6 +125,10 @@ export type Quote = {
   viewedAt: Date | null
   sentAt: Date | null
   convertedOrderId: string | null
+  /** The order this quote's agreed prices were spent on, if any - see
+   *  migrations/003_quoted_prices_used.sql. Cleared by a renewal. */
+  pricesUsedOrderId: string | null
+  pricesUsedAt: Date | null
   createdAt: Date
   updatedAt: Date
 }

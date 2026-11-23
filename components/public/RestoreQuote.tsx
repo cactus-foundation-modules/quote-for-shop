@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { addToCart, clearCart } from '@/modules/shop/components/public/cart'
+import { addToCart, clearCart, getCart } from '@/modules/shop/components/public/cart'
+import { rememberActiveQuote } from '@/modules/quote-for-shop/components/public/active-quote'
 import { QUOTE_UI_CSS } from '@/modules/quote-for-shop/components/public/quote-ui-css'
 
 // What /quote/<code> does: the link on a quote is a way back to the basket, so
@@ -14,6 +15,9 @@ import { QUOTE_UI_CSS } from '@/modules/quote-for-shop/components/public/quote-u
 
 type Retrieved = {
   quoteNumber: string
+  code: string
+  /** Why the quote's agreed prices no longer stand, when they do not. */
+  agreedRefusal?: string | null
   lines: Array<{ productId: string; quantity: number; lineId: string | null; meta: Record<string, unknown> | null }>
   changes: {
     changed: Array<{ name: string; wasUnitPrice: number; nowUnitPrice: number }>
@@ -60,7 +64,9 @@ export function RestoreQuote({ code }: { code: string }) {
             meta: line.meta ?? undefined,
           })
         }
-        if (found.changes.changed.length === 0 && found.changes.gone.length === 0) {
+        // So the basket page can show this quote, to view and download again.
+        rememberActiveQuote(found.code, found.quoteNumber, getCart())
+        if (found.changes.changed.length === 0 && found.changes.gone.length === 0 && !found.agreedRefusal) {
           window.location.replace(CART_PATH)
           return
         }
@@ -94,6 +100,10 @@ export function RestoreQuote({ code }: { code: string }) {
               ? `Nothing on quote ${retrieved.quoteNumber} is on sale any more, so your basket has been left as it was.`
               : `${retrieved.lines.length} item${retrieved.lines.length === 1 ? '' : 's'} put back from quote ${retrieved.quoteNumber}.`}
           </p>
+          {retrieved.agreedRefusal && (
+            <p className="qfs-error" style={{ margin: 0 }}>{retrieved.agreedRefusal}</p>
+          )}
+          {(retrieved.changes.gone.length > 0 || retrieved.changes.changed.length > 0) && (
           <div className="qfs-changes">
             <strong>A couple of things have changed since this quote was saved:</strong>
             <ul>
@@ -108,6 +118,7 @@ export function RestoreQuote({ code }: { code: string }) {
               ))}
             </ul>
           </div>
+          )}
           <div><a className="qfs-btn qfs-btn-primary" href={CART_PATH}>Go to my basket</a></div>
         </>
       )}

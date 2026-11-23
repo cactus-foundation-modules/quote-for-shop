@@ -49,6 +49,16 @@ export const QUOTE_UI_CSS = `
 .qfs-changes { margin: 0.75rem 0 0; padding: 0.75rem 0.875rem; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-bg-subtle); font-size: 0.875rem; }
 .qfs-changes ul { margin: 0.375rem 0 0; padding-left: 1.125rem; display: grid; gap: 0.125rem; }
 
+/* The basket's quote panel (ActiveQuotePanel): the quote the basket came from,
+   with its own document a click away, and the ordinary save button smaller
+   underneath. */
+.qfs-active { display: grid; gap: 0.5rem; padding: 0.75rem 0.875rem; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-bg-subtle); }
+.qfs-active-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 0.75rem; }
+.qfs-active-title { font-weight: 600; color: var(--color-text); }
+.qfs-active-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.qfs-active-note { margin: 0; }
+.qfs-active-save .qfs-btn { font-size: 0.8125rem; padding: 0.4375rem 0.75rem; font-weight: 500; background: transparent; }
+
 @media (max-width: 560px) {
   .qfs-lb { padding: 0; }
   .qfs-lb-panel { width: 100%; height: 100%; max-height: none; border-radius: 0; border: 0; }

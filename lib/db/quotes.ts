@@ -44,6 +44,8 @@ type QuoteRow = {
   viewed_at: Date | null
   sent_at: Date | null
   converted_order_id: string | null
+  prices_used_order_id?: string | null
+  prices_used_at?: Date | null
   created_at: Date
   updated_at: Date
 }
@@ -79,6 +81,10 @@ function toQuote(row: QuoteRow): Quote {
     viewedAt: row.viewed_at,
     sentAt: row.sent_at,
     convertedOrderId: row.converted_order_id,
+    // Optional on the row: a query shape cached before migration 003 reads as
+    // "not used", which is what every quote was before there was a column.
+    pricesUsedOrderId: row.prices_used_order_id ?? null,
+    pricesUsedAt: row.prices_used_at ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -325,9 +331,54 @@ export async function markQuoteViewed(id: string): Promise<void> {
 export async function markQuoteConverted(id: string, orderId: string): Promise<void> {
   await prisma.$executeRaw`
     UPDATE "qfs_quotes"
-    SET "converted_order_id" = ${orderId}, "status" = 'WON', "updated_at" = CURRENT_TIMESTAMP
+    SET "converted_order_id" = ${orderId}, "status" = 'WON',
+        -- An order made from the quote spends its agreed prices too, so the
+        -- customer's link cannot buy the same deal a second time.
+        "prices_used_order_id" = COALESCE("prices_used_order_id", ${orderId}),
+        "prices_used_at" = COALESCE("prices_used_at", CURRENT_TIMESTAMP),
+        "updated_at" = CURRENT_TIMESTAMP
     WHERE "id" = ${id}
   `
+}
+
+/** Records that an order has been placed on a quote's agreed prices, so its
+ *  link stops honouring them. First order wins: a second order arriving with
+ *  the same quote's lines (two tabs) leaves the first one recorded. Also marks
+ *  the quote won, unless staff have already settled it themselves. */
+export async function markQuotePricesUsed(code: string, orderId: string): Promise<void> {
+  await prisma.$executeRaw`
+    UPDATE "qfs_quotes"
+    SET "prices_used_order_id" = COALESCE("prices_used_order_id", ${orderId}),
+        "prices_used_at" = COALESCE("prices_used_at", CURRENT_TIMESTAMP),
+        "status" = CASE WHEN "status" IN ('NEW', 'SENT', 'EXPIRED') THEN 'WON' ELSE "status" END,
+        "updated_at" = CURRENT_TIMESTAMP
+    WHERE "code" = ${code}
+  `
+}
+
+/** A renewal: the agreed prices are good for one more order. The expiry date is
+ *  the owner's to move separately, on the same page. */
+export async function renewQuotePrices(id: string): Promise<Quote | null> {
+  const rows = await prisma.$queryRaw<QuoteRow[]>`
+    UPDATE "qfs_quotes"
+    SET "prices_used_order_id" = NULL,
+        "prices_used_at" = NULL,
+        "status" = CASE WHEN "status" IN ('WON', 'EXPIRED') THEN 'SENT' ELSE "status" END,
+        "updated_at" = CURRENT_TIMESTAMP
+    WHERE "id" = ${id}
+    RETURNING *
+  `
+  return rows[0] ? toQuote(rows[0]) : null
+}
+
+/** Quotes by code, in one read - the basket resolves every quoted line at once. */
+export async function getQuotesByCodes(codes: string[]): Promise<Map<string, Quote>> {
+  const out = new Map<string, Quote>()
+  const unique = [...new Set(codes)].filter(Boolean)
+  if (unique.length === 0) return out
+  const rows = await prisma.$queryRaw<QuoteRow[]>`SELECT * FROM "qfs_quotes" WHERE "code" = ANY(${unique})`
+  for (const row of rows) out.set(row.code, toQuote(row))
+  return out
 }
 
 /**

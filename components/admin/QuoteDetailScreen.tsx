@@ -5,6 +5,9 @@ import { useAdminPath } from '@/components/admin/AdminPathContext'
 import { useAdminConfirm } from '@/components/admin/useAdminConfirm'
 import { formatMoney } from '@/modules/shop/lib/money'
 import type { Quote, QuoteLine, QuoteStatus } from '@/modules/quote-for-shop/lib/types'
+import { CustomVariationEditor } from '@/modules/quote-for-shop/components/admin/CustomVariationEditor'
+import { QuoteDocumentLightbox } from '@/modules/quote-for-shop/components/public/QuoteDocumentLightbox'
+import { QUOTE_UI_CSS } from '@/modules/quote-for-shop/components/public/quote-ui-css'
 
 // One quote, and everything an owner does with it: read what came in, correct the
 // customer's details, price it, write a reply, send it, mark how it went, and turn
@@ -46,9 +49,13 @@ function toRow(line: QuoteLine, key: string): EditRow {
   return { key, line, qtyText: String(line.quantity), priceText: line.unitPrice.toFixed(2) }
 }
 
+// A line typed in by hand: no product behind it (installation, a delivery
+// charge). It goes into the customer's basket at this price as a fixed line,
+// which they cannot take out unless "customer can remove" is ticked.
 const BLANK_LINE: QuoteLine = {
   productId: null, name: '', sku: null, slug: null, imageUrl: null,
   quantity: 1, unitPrice: 0, lineTotal: 0, detail: [], lineId: null, meta: null, delivery: null,
+  priceLocked: true, removable: false,
 }
 
 /** `2026-08-14` for a date input, or '' for no expiry. Local parts, not
@@ -78,6 +85,13 @@ export function QuoteDetailScreen({ quoteId }: { quoteId: string }) {
   const [busy, setBusy] = useState<'idle' | 'saving' | 'sending' | 'converting'>('idle')
   const [error, setError] = useState<string | null>(null)
   const [note, setNote] = useState<string | null>(null)
+  // The row whose custom-variation editor is open, if any.
+  const [customKey, setCustomKey] = useState<string | null>(null)
+  const [viewing, setViewing] = useState(false)
+  // When the page was opened, for "has this quote expired" - read once, not on
+  // every render.
+  const [openedAt] = useState(() => Date.now())
+  const [pdf, setPdf] = useState<{ enabled: boolean; label: string }>({ enabled: true, label: 'Download as PDF' })
   // Row keys have to survive a removal, so they cannot be the array index.
   const nextKey = useRef(0)
 
@@ -107,6 +121,23 @@ export function QuoteDetailScreen({ quoteId }: { quoteId: string }) {
 
   // eslint-disable-next-line react-hooks/set-state-in-effect -- delegating to an async loader; every setState runs after an await
   useEffect(() => { void load() }, [load])
+
+  // Whether this shop offers the PDF at all, and what it calls the button - the
+  // owner's own settings, so the admin says what the customer's basket says.
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const response = await fetch('/api/m/quote-for-shop/admin/settings')
+        if (!response.ok) return
+        const data = await response.json()
+        if (!cancelled && data?.config) setPdf({ enabled: data.config.pdfEnabled !== false, label: data.config.pdfButtonLabel || 'Download as PDF' })
+      } catch {
+        // Keep the defaults: the button still works, and the route says if it is off.
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
 
   // Typed prices are worth more than a tidy exit. The browser's own wording is
   // all any page gets here, but the tab close is at least stopped.
@@ -199,6 +230,21 @@ export function QuoteDetailScreen({ quoteId }: { quoteId: string }) {
     }
   }
 
+  async function renew() {
+    if (dirty && !(await askConfirm({ title: 'Renew with unsaved changes?', message: 'Save your changes first if you want the renewed quote to include them.', confirmLabel: 'Renew anyway', danger: false }))) return
+    setError(null); setNote(null)
+    try {
+      const response = await fetch(`/api/m/quote-for-shop/admin/quotes/${quoteId}/renew`, { method: 'POST' })
+      const data = await response.json()
+      if (!response.ok) { setError(data.error || 'The quote could not be renewed.'); return }
+      setQuote(data.quote as Quote)
+      setStatus((data.quote as Quote).status)
+      setNote('Renewed. The customer\'s link will honour these prices for one more order.')
+    } catch {
+      setError('The quote could not be renewed.')
+    }
+  }
+
   async function convert() {
     if (dirty && !(await askConfirm({ title: 'Carry on with unsaved changes?', message: 'This quote has unsaved changes. The order is made from what is SAVED.', confirmLabel: 'Carry on', danger: false }))) return
     setBusy('converting'); setError(null); setNote(null)
@@ -248,6 +294,15 @@ export function QuoteDetailScreen({ quoteId }: { quoteId: string }) {
   function addRow() {
     setDirty(true)
     setRows((current) => [...current, toRow({ ...BLANK_LINE }, `row-${nextKey.current++}`)])
+  }
+
+  /** A new line that starts life as a custom variation: the editor opens on it
+   *  straight away, at the product search. */
+  function addCustomRow() {
+    setDirty(true)
+    const key = `row-${nextKey.current++}`
+    setRows((current) => [...current, toRow({ ...BLANK_LINE, removable: undefined }, key)])
+    setCustomKey(key)
   }
 
   function removeRow(key: string) {
@@ -306,17 +361,54 @@ export function QuoteDetailScreen({ quoteId }: { quoteId: string }) {
             <span style={labelStyle}>
               {expiresAt ? 'Clear the date for a quote that never lapses.' : 'No expiry - this quote stands until you say otherwise.'}
             </span>
+            {/* The document itself, and its PDF - what was saved, so save first
+                if you want to see your changes. */}
+            <button type="button" className="btn" onClick={() => setViewing(true)}>View quote</button>
+            {pdf.enabled && (
+              <a className="btn" href={`/api/m/quote-for-shop/public/quotes/${quote.code.replace('-', '')}/pdf`}>
+                {pdf.label}
+              </a>
+            )}
             <a
               className="btn"
               href={`/quote/${quote.code.replace('-', '')}`}
               target="_blank"
               rel="noopener noreferrer"
+              title="Opens the customer's link. It replaces YOUR basket with this quote."
             >
-              View as the customer sees it
+              Open the customer&apos;s link (fills your basket)
             </a>
+            {dirty && <span style={labelStyle}>View and download show the saved quote. Save first to include your changes.</span>}
           </div>
         </div>
+        {(quote.pricesUsedOrderId || (quote.expiresAt && new Date(quote.expiresAt).getTime() < openedAt)) && (
+          <div className="alert alert-warning" role="status" style={{ marginTop: '1rem', display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center' }}>
+            <span style={{ flex: '1 1 18rem' }}>
+              {quote.pricesUsedOrderId
+                ? `An order has been placed on this quote${quote.pricesUsedAt ? ` (${new Date(quote.pricesUsedAt).toLocaleDateString('en-GB')})` : ''}, so its link no longer honours your prices.`
+                : 'This quote has expired, so its link no longer honours your prices. Move the date on to renew it.'}
+            </span>
+            {quote.pricesUsedOrderId && (
+              <>
+                <a className="btn btn-sm" href={`/${adminPath}/m/shop/orders/${quote.pricesUsedOrderId}`}>Open that order</a>
+                <button type="button" className="btn btn-sm" onClick={renew}>Renew for another order</button>
+              </>
+            )}
+          </div>
+        )}
       </section>
+      {viewing && (
+        <>
+          <style dangerouslySetInnerHTML={{ __html: QUOTE_UI_CSS }} />
+          <QuoteDocumentLightbox
+            code={quote.code}
+            quoteNumber={quote.quoteNumber}
+            pdfEnabled={pdf.enabled}
+            pdfLabel={pdf.label}
+            onClose={() => setViewing(false)}
+          />
+        </>
+      )}
 
       <section style={card}>
         <h2 style={{ fontSize: '0.9375rem', margin: '0 0 0.25rem' }}>Customer</h2>
@@ -360,7 +452,7 @@ export function QuoteDetailScreen({ quoteId }: { quoteId: string }) {
         <p style={{ margin: '0 0 0.75rem', ...labelStyle }}>
           {quote.pricesHidden
             ? 'This quote was taken with prices withheld. Type your figures in here, then send it.'
-            : 'Prices are what the shop was charging when the quote was made. Change them here if you are quoting something different.'}
+            : 'Prices are what the shop was charging when the quote was made. Type your own and it is held in the customer\'s basket. Swap a line for a custom variation to quote something the shop does not list.'}
         </p>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
@@ -386,10 +478,51 @@ export function QuoteDetailScreen({ quoteId }: { quoteId: string }) {
                       style={{ width: '100%', fontWeight: 500 }}
                       onChange={(event) => editRow(row.key, { line: { name: event.target.value } })}
                     />
+                    {row.line.custom && (
+                      <span style={{ display: 'block', ...labelStyle, fontWeight: 600 }}>
+                        Custom variation{row.line.custom.listingName ? ` of ${row.line.custom.listingName}` : ''}
+                      </span>
+                    )}
                     {row.line.sku && <span style={{ display: 'block', ...labelStyle }}>{row.line.sku}</span>}
                     {row.line.detail.map((detail, i) => (
                       <span key={i} style={{ display: 'block', ...labelStyle }}>{detail.label}: {detail.value}</span>
                     ))}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem 1rem', alignItems: 'center', marginTop: '0.375rem' }}>
+                      {row.line.productId == null ? (
+                        <label style={{ ...labelStyle, display: 'inline-flex', gap: '0.375rem', alignItems: 'center' }}>
+                          <input
+                            type="checkbox"
+                            checked={row.line.removable === true}
+                            onChange={(event) => editRow(row.key, { line: { removable: event.target.checked } })}
+                          />
+                          Customer can remove
+                        </label>
+                      ) : !row.line.custom ? (
+                        <label style={{ ...labelStyle, display: 'inline-flex', gap: '0.375rem', alignItems: 'center' }}>
+                          <input
+                            type="checkbox"
+                            checked={row.line.priceLocked === true}
+                            onChange={(event) => editRow(row.key, { line: { priceLocked: event.target.checked } })}
+                          />
+                          Hold this price in the basket
+                        </label>
+                      ) : null}
+                      {row.line.productId != null && customKey !== row.key && (
+                        <button type="button" className="btn btn-sm" onClick={() => setCustomKey(row.key)}>
+                          {row.line.custom ? 'Edit custom variation' : 'Make custom variation'}
+                        </button>
+                      )}
+                    </div>
+                    {customKey === row.key && (
+                      <CustomVariationEditor
+                        line={row.line}
+                        onCancel={() => setCustomKey(null)}
+                        onApply={(next) => {
+                          editRow(row.key, { line: next })
+                          setCustomKey(null)
+                        }}
+                      />
+                    )}
                   </td>
                   <td style={{ ...cell, textAlign: 'right' }}>
                     <input
@@ -419,7 +552,9 @@ export function QuoteDetailScreen({ quoteId }: { quoteId: string }) {
                         // Digits and ONE decimal point. The text is kept exactly as
                         // typed so a half-finished "12." survives to become "12.50".
                         const cleaned = event.target.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1')
-                        editRow(row.key, { priceText: cleaned, line: { unitPrice: Number(cleaned) || 0 } })
+                        // A price typed by hand is a price the owner means: it is
+                        // held in the customer's basket unless they untick it.
+                        editRow(row.key, { priceText: cleaned, line: { unitPrice: Number(cleaned) || 0, priceLocked: true } })
                       }}
                       onBlur={() => editRow(row.key, { priceText: row.line.unitPrice.toFixed(2) })}
                     />
@@ -477,12 +612,18 @@ export function QuoteDetailScreen({ quoteId }: { quoteId: string }) {
             </tfoot>
           </table>
         </div>
-        <button type="button" className="btn btn-sm" style={{ marginTop: '0.75rem' }} onClick={addRow}>
-          Add a line
-        </button>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.75rem' }}>
+          <button type="button" className="btn btn-sm" onClick={addRow}>Add a line</button>
+          <button type="button" className="btn btn-sm" onClick={addCustomRow}>Add a custom variation</button>
+        </div>
         <p style={{ margin: '0.5rem 0 0', ...labelStyle }}>
-          Add a line for anything the customer did not put in the basket themselves - installation, a
-          delivery charge, a bespoke item. Nothing here is deducted from stock until the quote becomes an order.
+          A line is for anything with no product behind it - installation, a delivery charge. It goes into
+          the customer&apos;s basket at your price as a fixed line. A custom variation is a one-off version of a
+          product you sell, at your price, with your own wording for the options.
+        </p>
+        <p style={{ margin: '0.25rem 0 0', ...labelStyle }}>
+          Held prices, custom variations and lines are good for one order, until the &quot;Valid until&quot; date.
+          They take no discounts, and the quantity can go up but not down.
         </p>
       </section>
 

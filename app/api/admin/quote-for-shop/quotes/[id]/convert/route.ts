@@ -138,8 +138,16 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       // customer accepted "Oak desk 1600mm, Oak / Silver legs, delivered and
       // installed" and the warehouse was handed "Oak desk 1600mm". Shop prints
       // these on the order screen, the picking list and the receipt.
-      lineMeta: line.detail.length > 0
-        ? { fields: line.detail.map((row) => ({ label: row.label, value: row.value })) }
+      //
+      // A custom variation or a charge is made or done to order, so it takes
+      // nothing off the shelf, and a custom variation carries the picture it was
+      // quoted with (see LineMeta.stockExempt / imageUrl in shop).
+      lineMeta: line.detail.length > 0 || line.custom || line.productId == null
+        ? {
+            fields: line.detail.map((row) => ({ label: row.label, value: row.value })),
+            ...(line.custom || line.productId == null ? { stockExempt: true } : {}),
+            ...(line.custom && line.imageUrl ? { imageUrl: line.imageUrl } : {}),
+          }
         : null,
     })),
   })

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { requireQuoteUser } from '@/modules/quote-for-shop/lib/access'
 import { getQuoteById, updateQuote } from '@/modules/quote-for-shop/lib/db/quotes'
+import { withLineRefs } from '@/modules/quote-for-shop/lib/quoted-lines'
+import { getProductsByIds } from '@/modules/shop/lib/db/products'
 import type { QuoteLine, QuoteTotals } from '@/modules/quote-for-shop/lib/types'
 
 // One quote: read it, and change the parts of it staff are allowed to change.
@@ -31,6 +33,22 @@ const LineSchema = z.object({
     detailLabel: z.string().max(200),
     text: z.string().max(400),
     leadDays: z.number().int().min(0).max(3650),
+  }).nullable().optional(),
+  // The quoted-line fields (lib/quoted-lines.ts) - listed for the same reason.
+  ref: z.string().regex(/^[a-z0-9]{4,20}$/).optional(),
+  priceLocked: z.boolean().optional(),
+  custom: z.object({
+    optionsText: z.string().trim().min(1, 'A custom variation needs its options written out.').max(400),
+    listingName: z.string().max(400).optional(),
+  }).nullable().optional(),
+  deliveryTier: z.string().max(120).nullable().optional(),
+  removable: z.boolean().optional(),
+  group: z.object({
+    key: z.string().max(200),
+    role: z.enum(['main', 'attachment']),
+    caption: z.string().max(400).optional(),
+    depth: z.number().int().min(0).max(20).optional(),
+    order: z.number().int().optional(),
   }).nullable().optional(),
 })
 
@@ -111,10 +129,27 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
   // Line totals are recomputed from quantity x unit price rather than trusted:
   // the admin form does the same arithmetic on screen, and if the two ever
   // disagree the server's answer is the one that gets printed.
-  const lines = data.lines?.map((line) => ({
-    ...line,
-    lineTotal: round2(line.quantity * line.unitPrice),
-  }))
+  // Every line gets a stable ref on save (how a basket line finds its way back
+  // to it), and a custom variation or a line with no product always holds its
+  // price - neither has a shop price to fall back on.
+  const lines = data.lines
+    ? withLineRefs(data.lines.map((line) => ({
+        ...line,
+        lineTotal: round2(line.quantity * line.unitPrice),
+        priceLocked: line.priceLocked === true || Boolean(line.custom) || line.productId == null,
+      })))
+    : undefined
+
+  // A custom variation is sold on the back of a real listing, so that listing
+  // has to exist - a typo'd id would only surface as a line the basket drops.
+  const customIds = (lines ?? []).filter((line) => line.custom && line.productId).map((line) => line.productId as string)
+  if (customIds.length > 0) {
+    const found = await getProductsByIds(customIds)
+    const missing = (lines ?? []).findIndex((line) => line.custom && line.productId && !found.has(line.productId))
+    if (missing >= 0) {
+      return NextResponse.json({ error: `Line ${missing + 1} is a custom variation of a product that no longer exists. Pick another.` }, { status: 400 })
+    }
+  }
 
   const quote = await updateQuote(id, {
     status: data.status,
@@ -124,6 +159,8 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     customerEmail: data.customerEmail,
     customerPhone: data.customerPhone,
     company: data.company,
+    // Missing until now: the box was on the page and the value was thrown away.
+    customerReference: data.customerReference,
     lines,
     totals: lines ? retotal(lines, existing.totals) : undefined,
     ...(Object.prototype.hasOwnProperty.call(data, 'expiresAt')

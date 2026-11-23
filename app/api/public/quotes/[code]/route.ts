@@ -5,6 +5,7 @@ import { looksLikeQuoteCode, normaliseQuoteCode } from '@/modules/quote-for-shop
 import { getQuoteRowByCode, markQuoteViewed } from '@/modules/quote-for-shop/lib/db/quotes'
 import { buildQuoteSnapshot } from '@/modules/quote-for-shop/lib/snapshot'
 import { repriceQuote } from '@/modules/quote-for-shop/lib/reprice'
+import { agreedPriceRefusal, isAgreedLine, quoteCartLineId, quoteCartLines } from '@/modules/quote-for-shop/lib/quoted-lines'
 
 // GET - retrieve a saved quote by its code, ready to be put back in the basket.
 //
@@ -40,11 +41,35 @@ export async function GET(request: NextRequest, context: { params: Promise<{ cod
   if (!found) {
     return NextResponse.json({ error: 'We could not find a quote with that code.' }, { status: 404 })
   }
-  const { quote, cart } = found
+  const { quote } = found
 
-  // Priced again, today, through the shop's own resolver.
+  // The basket is built from the quote's LINES as they stand now - staff may
+  // have priced them, swapped one for a custom variation or added a charge - and
+  // priced again, today, through the shop's own resolver. The agreed lines come
+  // back at the quote's prices (lib/quoted-line-resolver.ts); everything else at
+  // today's. See lib/quoted-lines.ts.
+  const cart = quoteCartLines(quote)
   const current = await buildQuoteSnapshot(cart)
-  const changes = repriceQuote(quote, current)
+  // Compared line for line on the same ids the basket lines carry. An agreed
+  // line's price is the quote's own and cannot have "changed", and its figure in
+  // the basket includes any delivery service on top, so it is left out of the
+  // price comparison; its only possible news is being refused, which "gone"
+  // still reports with the reason.
+  const savedLines = quote.lines.map((line, index) => ({
+    ...line,
+    lineId: cart.find((c) => (c.meta?.qfsQuote as { ref?: string } | undefined)?.ref === (line.ref ?? `pos${index}`))?.lineId
+      ?? line.lineId ?? quoteCartLineId(line.ref ?? `pos${index}`),
+  }))
+  const changes = repriceQuote({ lines: savedLines, totals: quote.totals }, current)
+  const agreedNames = new Set(quote.lines.filter(isAgreedLine).map((line) => line.name))
+  changes.changed = changes.changed.filter((change) => !agreedNames.has(change.name))
+  // The refusal is said once, at the top (`agreedRefusal` below); against each
+  // line it becomes a short phrase the restore page can lower-case into its
+  // sentence without mangling a month's name.
+  const refusal = quote.lines.some(isAgreedLine) ? agreedPriceRefusal(quote) : null
+  if (refusal) {
+    changes.gone = changes.gone.map((item) => (item.reason === refusal ? { ...item, reason: 'Only available at the quoted price' } : item))
+  }
 
   await markQuoteViewed(quote.id)
 
@@ -53,17 +78,24 @@ export async function GET(request: NextRequest, context: { params: Promise<{ cod
     code: quote.code,
     url: `/quote/${quote.code.replace('-', '')}`,
     // What to put in the basket: only what the shop will actually sell today.
-    lines: current.lines.map((line) => ({
-      productId: line.productId,
-      quantity: line.quantity,
-      lineId: line.lineId,
-      meta: line.meta,
-    })),
+    // The basket lines themselves (not the priced copies, which name a quoted
+    // charge by no product at all), less any the shop refused.
+    lines: cart
+      .filter((line) => current.lines.some((priced) => (priced.lineId ?? priced.productId) === (line.lineId ?? line.productId)))
+      .map((line) => ({
+        productId: line.productId,
+        quantity: line.quantity,
+        lineId: line.lineId ?? null,
+        meta: line.meta ?? null,
+      })),
     changes: {
       changed: changes.changed,
       gone: changes.gone,
       totalChanged: changes.totalChanged,
     },
     currencySymbol: quote.currencySymbol,
+    // Why the agreed prices no longer stand, if they do not - the restore page
+    // says it once at the top rather than only against each line.
+    agreedRefusal: refusal,
   })
 }

@@ -76,7 +76,7 @@ export async function buildQuoteSnapshot(
   const available = resolved.filter((line) => line.available)
   const unavailable = resolved
     .filter((line) => !line.available)
-    .map((line) => ({ name: line.product.name, reason: line.availabilityReason ?? 'No longer available' }))
+    .map((line) => ({ name: line.identity?.name ?? line.product.name, reason: line.availabilityReason ?? 'No longer available' }))
 
   const totals = await resolveOrderTotals({
     lines: available,
@@ -131,7 +131,7 @@ export async function buildQuoteSnapshot(
 
   // One image per line, so the document has something to show. Batched: a quote
   // for thirty items must not be thirty media queries.
-  const mediaByProduct = await getProductMediaForProducts([...new Set(available.map((line) => line.product.id))])
+  const mediaByProduct = await getProductMediaForProducts([...new Set(available.filter((line) => !line.virtual).map((line) => line.product.id))])
   const imageByProduct = new Map<string, string | null>()
   for (const [productId, media] of mediaByProduct) {
     const usable = media.filter((m) => m.type !== 'VIDEO_URL')
@@ -145,14 +145,16 @@ export async function buildQuoteSnapshot(
   for (const line of cart) metaByKey.set(line.lineId ?? line.productId, line.meta ?? null)
 
   const lines: QuoteLine[] = available.map((line) => ({
-    productId: line.product.id,
+    // A line with no product behind it (a quoted charge) is stored as one.
+    productId: line.virtual ? null : line.product.id,
     // The cart's own display title where a resolver gave one (a variation's base
     // name), else the product's. A quote that names the parent product when the
     // shopper chose a variant is a quote for the wrong thing.
-    name: line.displayTitle?.name || line.product.name,
-    sku: line.product.sku ?? null,
-    slug: line.product.slug,
-    imageUrl: imageByProduct.get(line.product.id) ?? null,
+    // An agreed line's own name, SKU and picture win (a custom variation).
+    name: line.identity?.name || line.displayTitle?.name || line.product.name,
+    sku: line.identity ? (line.identity.sku ?? null) : (line.product.sku ?? null),
+    slug: line.virtual ? null : line.product.slug,
+    imageUrl: line.identity?.imageUrl ?? imageByProduct.get(line.product.id) ?? null,
     quantity: line.quantity,
     unitPrice: round2(line.unitPrice),
     lineTotal: round2(line.lineSubtotal),

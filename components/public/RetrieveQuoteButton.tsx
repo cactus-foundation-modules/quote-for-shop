@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { addToCart, clearCart } from '@/modules/shop/components/public/cart'
+import { addToCart, clearCart, getCart } from '@/modules/shop/components/public/cart'
+import { rememberActiveQuote } from '@/modules/quote-for-shop/components/public/active-quote'
 import { QUOTE_UI_CSS } from '@/modules/quote-for-shop/components/public/quote-ui-css'
 import { QuoteLightbox } from '@/modules/quote-for-shop/components/public/QuoteLightbox'
 import { QUOTE_CODE_LENGTH, formatQuoteCode } from '@/modules/quote-for-shop/lib/code'
@@ -22,6 +23,8 @@ import { QUOTE_CODE_LENGTH, formatQuoteCode } from '@/modules/quote-for-shop/lib
 
 type Retrieved = {
   quoteNumber: string
+  code: string
+  agreedRefusal?: string | null
   url: string
   lines: Array<{ productId: string; quantity: number; lineId: string | null; meta: Record<string, unknown> | null }>
   changes: {
@@ -71,6 +74,8 @@ export function RetrieveQuoteButton({
           meta: line.meta ?? undefined,
         })
       }
+      // So the basket's quote panel can offer this quote to view and download.
+      rememberActiveQuote(retrieved.code, retrieved.quoteNumber, getCart())
       setDone(retrieved)
     } catch {
       setError('That did not work. Please check your connection and try again.')
@@ -126,6 +131,7 @@ export function RetrieveQuoteButton({
                 <p className="qfs-note" style={{ marginTop: 0 }}>
                   {done.lines.length} item{done.lines.length === 1 ? '' : 's'} restored from quote {done.quoteNumber}.
                 </p>
+                {done.agreedRefusal && <p className="qfs-error">{done.agreedRefusal}</p>}
                 {(done.changes.changed.length > 0 || done.changes.gone.length > 0) && (
                   <div className="qfs-changes">
                     <strong>A couple of things have changed since you saved this:</strong>
