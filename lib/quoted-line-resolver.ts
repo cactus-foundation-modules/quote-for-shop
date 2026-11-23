@@ -38,20 +38,43 @@ import type { Quote, QuoteLine } from '@/modules/quote-for-shop/lib/types'
 type Store = { quotes: Map<string, Quote | null>; taxClass: Map<string, string | null> }
 
 // One store per request (cache() with no arguments), so nothing leaks between
-// shoppers and a whole basket costs one quote read.
+// shoppers and a whole basket costs one quote read - WHERE React keeps one.
+//
+// It does not everywhere. Inside a page render cache() memoises; in a route
+// handler (the basket's /cart/validate, the checkout) it hands back a FRESH
+// object on every call. The first cut wrote the quotes into one store and read
+// them back out of another, found nothing, stood aside - and every quoted line
+// fell back to its listing's own price, which on a listing whose prices live on
+// its variations is £0. So the store is only ever a shortcut: every function
+// below returns what it loaded directly, and never assumes a second
+// requestStore() call is the same object as the first.
 const requestStore = cache((): Store => ({ quotes: new Map(), taxClass: new Map() }))
 
-async function loadQuotes(codes: string[]): Promise<void> {
+/** The quotes for these codes, from the request store where it already has
+ *  them and one read for the rest. Always returns every code asked for (null
+ *  for one that does not exist), whether or not the store kept anything. */
+async function loadQuotes(codes: string[]): Promise<Map<string, Quote | null>> {
   const store = requestStore()
-  const missing = [...new Set(codes)].filter((code) => !store.quotes.has(code))
-  if (missing.length === 0) return
-  const found = await getQuotesByCodes(missing)
-  for (const code of missing) store.quotes.set(code, found.get(code) ?? null)
+  const wanted = [...new Set(codes)]
+  const out = new Map<string, Quote | null>()
+  const missing: string[] = []
+  for (const code of wanted) {
+    if (store.quotes.has(code)) out.set(code, store.quotes.get(code) ?? null)
+    else missing.push(code)
+  }
+  if (missing.length > 0) {
+    const found = await getQuotesByCodes(missing)
+    for (const code of missing) {
+      const quote = found.get(code) ?? null
+      store.quotes.set(code, quote)
+      out.set(code, quote)
+    }
+  }
+  return out
 }
 
 async function quoteFor(code: string): Promise<Quote | null> {
-  await loadQuotes([code])
-  return requestStore().quotes.get(code) ?? null
+  return (await loadQuotes([code])).get(code) ?? null
 }
 
 /** shop.cart-line-resolver-prefetch: every quote the basket points at, once. */
@@ -171,10 +194,10 @@ export async function quoteVirtualProducts(ids: string[]): Promise<VirtualCartPr
     .map((id) => ({ id, pointer: parseQuoteVirtualId(id) }))
     .filter((p): p is { id: string; pointer: NonNullable<ReturnType<typeof parseQuoteVirtualId>> } => p.pointer != null)
   if (pointers.length === 0) return []
-  await loadQuotes(pointers.map((p) => p.pointer.code))
+  const quotes = await loadQuotes(pointers.map((p) => p.pointer.code))
   const out: VirtualCartProduct[] = []
   for (const { id, pointer } of pointers) {
-    const quote = requestStore().quotes.get(pointer.code)
+    const quote = quotes.get(pointer.code)
     const line: QuoteLine | null = quote ? findQuoteLine(quote, pointer.ref) : null
     if (!quote || !line || line.productId != null || !line.name.trim()) continue
     out.push({

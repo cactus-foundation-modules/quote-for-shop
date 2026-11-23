@@ -1,4 +1,5 @@
-import { cartLineKey, type CartLine } from '@/modules/shop/components/public/cart'
+import { useEffect, useState } from 'react'
+import { cartLineKey, getCart, subscribeCart, type CartLine } from '@/modules/shop/components/public/cart'
 
 // Which quote the basket was last filled from, remembered in this browser.
 //
@@ -75,4 +76,24 @@ export function basketMatchesQuote(cart: CartLine[], active: ActiveQuote): boole
 export function basketStillHoldsQuote(cart: CartLine[], active: ActiveQuote): boolean {
   const now = linesOf(cart)
   return Object.keys(active.lines).some((key) => key in now)
+}
+
+/** Whether the basket is currently holding a quote that was opened or
+ *  retrieved, kept up to date as the basket changes. False on the server and on
+ *  the first paint, so a control that hides itself while a quote is held shows
+ *  for an ordinary shopper without a flicker. */
+export function useBasketHoldsQuote(enabled = true): boolean {
+  const [held, setHeld] = useState(false)
+  useEffect(() => {
+    if (!enabled) return
+    const read = () => {
+      const active = readActiveQuote()
+      setHeld(Boolean(active && basketStillHoldsQuote(getCart(), active)))
+    }
+    read()
+    const unsubscribe = subscribeCart(read)
+    window.addEventListener('qfs-active-quote', read)
+    return () => { unsubscribe(); window.removeEventListener('qfs-active-quote', read) }
+  }, [enabled])
+  return held
 }

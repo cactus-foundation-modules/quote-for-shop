@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { addToCart, clearCart, getCart } from '@/modules/shop/components/public/cart'
-import { rememberActiveQuote } from '@/modules/quote-for-shop/components/public/active-quote'
+import { rememberActiveQuote, useBasketHoldsQuote } from '@/modules/quote-for-shop/components/public/active-quote'
 import { QUOTE_UI_CSS } from '@/modules/quote-for-shop/components/public/quote-ui-css'
 import { QuoteLightbox } from '@/modules/quote-for-shop/components/public/QuoteLightbox'
 import { QUOTE_CODE_LENGTH, formatQuoteCode } from '@/modules/quote-for-shop/lib/code'
@@ -51,6 +51,10 @@ export function RetrieveQuoteButton({
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState<Retrieved | null>(null)
+  // Once the basket holds a retrieved quote, the basket's quote panel is the way
+  // back to it, and offering to retrieve one again only invites the customer to
+  // replace it by accident. Empty the basket and the button comes back.
+  const holdsQuote = useBasketHoldsQuote(!preview)
 
   async function retrieve() {
     setBusy(true)
@@ -93,14 +97,19 @@ export function RetrieveQuoteButton({
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: QUOTE_UI_CSS }} />
-      <button
-        type="button"
-        className="qfs-btn"
-        style={compact ? { padding: '0.5rem 0.875rem', fontSize: '0.875rem' } : undefined}
-        onClick={() => { if (!preview) { setDone(null); setError(null); setOpen(true) } }}
-      >
-        {label}
-      </button>
+      {/* Only the trigger hides: the lightbox below stays mounted, so the
+          "your basket has been put back" panel is not torn down the moment the
+          retrieve it reports on succeeds. */}
+      {!holdsQuote && (
+        <button
+          type="button"
+          className="qfs-btn"
+          style={compact ? { padding: '0.5rem 0.875rem', fontSize: '0.875rem' } : undefined}
+          onClick={() => { if (!preview) { setDone(null); setError(null); setOpen(true) } }}
+        >
+          {label}
+        </button>
+      )}
 
       {open && (
         <QuoteLightbox
