@@ -52,12 +52,17 @@ export const QUOTE_UI_CSS = `
 /* The basket's quote panel (ActiveQuotePanel): the quote the basket came from,
    with its own document a click away, and the ordinary save button smaller
    underneath. */
-.qfs-active { display: grid; gap: 0.5rem; padding: 0.75rem 0.875rem; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-bg-subtle); }
-.qfs-active-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 0.75rem; }
-.qfs-active-title { font-weight: 600; color: var(--color-text); }
-.qfs-active-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.qfs-active-note { margin: 0; }
-.qfs-active-save .qfs-btn { font-size: 0.8125rem; padding: 0.4375rem 0.75rem; font-weight: 500; background: transparent; }
+.qfs-active { display: grid; gap: 0.5rem; padding: 0.625rem 0.75rem; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-bg-subtle); width: max-content; max-width: 100%; flex: none; }
+/* One row on any screen wide enough for it: the panel sizes to its contents
+   (max-content above) rather than to the header column it sits in, so nothing
+   inside wraps. On a phone it wraps rather than running off the side. */
+.qfs-active-row { display: flex; flex-wrap: nowrap; align-items: center; gap: 0.625rem; white-space: nowrap; }
+.qfs-active-title { font-weight: 600; color: var(--color-text); margin-right: 0.25rem; }
+.qfs-active-note { margin: 0; white-space: normal; max-width: 44rem; }
+@media (max-width: 720px) {
+  .qfs-active { width: auto; }
+  .qfs-active-row { flex-wrap: wrap; white-space: normal; }
+}
 
 @media (max-width: 560px) {
   .qfs-lb { padding: 0; }
